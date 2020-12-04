@@ -61,13 +61,13 @@ namespace AdventOfCode2020
                 {
                     Min = int.Parse(r.Groups[1].Value),
                     Max = int.Parse(r.Groups[2].Value),
-                    Character = r.Groups[3].Value,
+                    Character = r.Groups[3].Value[0],
                     Password = r.Groups[4].Value,
                 };
             var result =
                 (
                 from c in input
-                let cnt = Regex.Matches(c.Password, c.Character).Count
+                let cnt = c.Password.Count(ch => ch == c.Character)
                 where cnt >= c.Min && cnt <= c.Max
                 select 1
                 ).Count();
@@ -77,7 +77,7 @@ namespace AdventOfCode2020
             result =
                 (
                 from c in input
-                where c.Password[c.Min - 1] == c.Character[0] ^ c.Password[c.Max - 1] == c.Character[0]
+                where c.Password[c.Min - 1] == c.Character ^ c.Password[c.Max - 1] == c.Character
                 select 1
                 ).Count();
 
