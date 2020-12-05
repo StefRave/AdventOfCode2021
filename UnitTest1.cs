@@ -171,5 +171,19 @@ namespace AdventOfCode2020
                 };
             }
         }
+
+        [Fact]
+        public void DoDay5()
+        {
+            var input = File.ReadAllLines("input5.txt")
+                .Select(s => s.Aggregate(0, (a, c) => a * 2 + ((c & 4 ^ 4) >> 2)))
+                .OrderBy(s => s)
+                .ToArray();
+
+            output.WriteLine($"Part1: {input[^1]}");
+
+            int result = input.Where((s, i) => s != input[0] + i).First() - 1;
+            output.WriteLine($"Part2: {result}");
+        }
     }
 }
