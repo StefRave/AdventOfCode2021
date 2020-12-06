@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using System.Text.RegularExpressions;
 using Xunit;
 using Xunit.Abstractions;
@@ -30,7 +32,7 @@ namespace AdventOfCode2020
                 int i1 = rnd.Next(0, input1.Length);
                 int i2 = rnd.Next(0, input1.Length);
 
-                if(input1[i1] + input1[i2] == 2020)
+                if (input1[i1] + input1[i2] == 2020)
                 {
                     output.WriteLine("{0}", input1[i1] * input1[i2]);
                     break;
@@ -71,7 +73,7 @@ namespace AdventOfCode2020
                 where cnt >= c.Min && cnt <= c.Max
                 select 1
                 ).Count();
-            
+
             output.WriteLine($"Part1: {result}");
 
             result =
@@ -93,7 +95,7 @@ namespace AdventOfCode2020
             long result = CountTrees(3, 1);
             output.WriteLine($"Part1: {result}");
 
-            result = 
+            result =
                 CountTrees(1, 1) *
                 CountTrees(3, 1) *
                 CountTrees(5, 1) *
@@ -142,7 +144,7 @@ namespace AdventOfCode2020
                 {
                     resultPresent++;
 
-                    if(ValidateNumberInRange(byr, 1920, 2002) &&
+                    if (ValidateNumberInRange(byr, 1920, 2002) &&
                         ValidateNumberInRange(iyr, 2010, 2020) &&
                         ValidateNumberInRange(eyr, 2020, 2030) &&
                         ValidateHeight(hgt) &&
@@ -185,5 +187,53 @@ namespace AdventOfCode2020
             int result = input.Where((s, i) => s != input[0] + i).First() - 1;
             output.WriteLine($"Part2: {result}");
         }
+
+        [Fact]
+        public void DoDay6()
+        {
+            var input = File.ReadAllText("input6.txt");
+
+            string[][] voteLinesPerGroup =
+                SplitByDoubleNewLine(input)
+                .Select(SplitByNewLine)
+                .ToArray();
+
+            var result = voteLinesPerGroup
+                .Select(group => string.Join("", group).Distinct())
+                .Sum(c => c.Count());
+
+            output.WriteLine($"Part1: {result}");
+#if USE_INTERSECT
+            result = voteLinesPerGroup
+                .Select(voteLines => voteLines.Aggregate<IEnumerable<char>>((a, b) => a.Intersect(b)).Count())
+                .Sum();
+#else
+            result =
+                (
+                from voteLines in voteLinesPerGroup
+                select GetCorrespondingVoteCount(voteLines)
+                ).Sum();
+#endif
+
+            output.WriteLine($"Part2: {result}");
+
+            int GetCorrespondingVoteCount(string[] voteLines)
+            {
+                long letterMask = 0b11111111111111111111111111;
+                foreach (var votes in voteLines.Where(l => l != ""))
+                {
+                    long letterFound = 0;
+                    foreach (var letter in votes)
+                        letterFound |= 1L << (letter - 'a');
+                    letterMask &= letterFound;
+                }
+                return BitOperations.PopCount((ulong)letterMask);
+            }
+        }
+
+        public static string[] SplitByNewLine(string input)
+            => input.Split(new string[]{"\r\n", "\n"}, StringSplitOptions.RemoveEmptyEntries);
+        public static string[] SplitByDoubleNewLine(string input)
+            => input.Split(new string[]{"\r\n\r\n", "\n\n"}, StringSplitOptions.RemoveEmptyEntries);
     }
 }
