@@ -231,6 +231,56 @@ namespace AdventOfCode2020
             }
         }
 
+        [Fact]
+        public void DoDay7()
+        {
+            var input = File.ReadAllText("input7.txt");
+
+            var matches = Regex.Matches(input, @"^(\w+ \w+) bags contain(?: (\d*) ?(\w+ \w+) bags?[,.])+", RegexOptions.Multiline);
+            
+            var itemsPerBag = matches.ToDictionary(m => 
+                m.Groups[1].Value, 
+                m => m.Groups[2].Captures.Select((c, i) => new { Count = int.Parse("0" + c.Value), Bag = m.Groups[3].Captures[i].Value }).ToArray());
+
+            var bagInOtherBags = 
+                (
+                    from bag in itemsPerBag
+                    from item in bag.Value
+                    let kv = new { bag, Has = item.Bag }
+                    group kv by kv.Has into g
+                    select g
+                ).ToDictionary(kv => kv.Key, kv => kv.Select(i => i.bag.Key));
+
+            var hasShinyGold = GetBagsContaining("shiny gold");
+            output.WriteLine($"Part1: {hasShinyGold.Count}");
+
+            output.WriteLine($"Part2: {CountBagsThatContain("shiny gold")}");
+
+            HashSet<string> GetBagsContaining(string bag, HashSet<string> hashSet = null)
+            {
+                hashSet = hashSet ?? new HashSet<string>();
+                if (bagInOtherBags.TryGetValue(bag, out var items))
+                {
+                    foreach (var item in bagInOtherBags[bag])
+                    {
+                        if (!hashSet.Contains(item))
+                        {
+                            hashSet.Add(item);
+                            GetBagsContaining(item, hashSet);
+                        }
+                    }
+                }
+                return hashSet;
+            }
+
+            int CountBagsThatContain(string bag)
+            {
+                return itemsPerBag[bag]
+                    .Where(i => i.Bag != "no other")
+                    .Sum(i => i.Count * (1 + CountBagsThatContain(i.Bag)));
+            }
+        }
+
         public static string[] SplitByNewLine(string input)
             => input.Split(new string[]{"\r\n", "\n"}, StringSplitOptions.RemoveEmptyEntries);
         public static string[] SplitByDoubleNewLine(string input)
