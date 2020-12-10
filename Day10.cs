@@ -26,15 +26,11 @@ namespace AdventOfCode2020
             input = input.Concat(new[] { input[^1] + 3 }).ToArray();
 
             int jolt = 0;
-            var diffs = input.Select(i => { int diff = i - jolt; jolt = i; return diff; }).ToArray();
+            var diffDict = input
+                .GroupBy(i => { int diff = i - jolt; jolt = i; return diff; })
+                .ToDictionary(c => c.Key, c => c.Count());
 
-            var groupedDiffs =
-                from i in diffs
-                group i by i into g
-                select g;
-            var diffDict = groupedDiffs.ToDictionary(c => c.Key, c => c.Count());
-
-            int result = diffDict[1] * (diffDict[3]);
+            int result = diffDict[1] * diffDict[3];
             output.WriteLine($"Part1: {result}");
 
             var r = new long[input[^1] + 1];
