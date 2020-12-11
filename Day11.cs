@@ -20,88 +20,86 @@ namespace AdventOfCode2020
         [Fact]
         public void DoDay11()
         {
-            var input =
-                File.ReadAllLines("input/input11.txt");
+            IList<string> input = File.ReadAllLines("input/input11.txt");
+            int seatInRowCount = input[0].Length;
+            int rowCount = input.Count;
 
-            int occupiedSeatsCount = CalculateSeats(maxOccupied: 4, onlyAdjacent: true);
+            int occupiedSeatsCount = CalculateSeats(input, maxOccupied: 4, onlyAdjacent: true);
             output.WriteLine($"Part1: {occupiedSeatsCount}");
 
-            
-            occupiedSeatsCount = CalculateSeats(maxOccupied: 5, onlyAdjacent: false);
+            occupiedSeatsCount = CalculateSeats(input, maxOccupied: 5, onlyAdjacent: false);
             output.WriteLine($"Part2: {occupiedSeatsCount}");
 
-            int CalculateSeats(int maxOccupied, bool onlyAdjacent)
+            int CalculateSeats(IList<string> seats, int maxOccupied, bool onlyAdjacent)
             {
-                var offsets = new (int dx, int dy)[] { (-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1) };
 
-                int seatInRowCount = input[0].Length;
-                int rowCount = input.Length;
-
-                IList<string> prevList = input;
-                List<string> newList;
                 bool isStable = false;
                 int occupiedSeatsCount = 0;
                 while (!isStable)
-                {
-                    occupiedSeatsCount = 0;
-                    isStable = true;
-                    newList = new List<string>();
-                    for (int y = 0; y < prevList.Count; y++)
-                    {
-                        var newRow = new char[seatInRowCount];
-                        for (int x = 0; x < prevList[0].Length; x++)
-                        {
-                            char currentSeat = prevList[y][x];
-                            if (currentSeat != '.')
-                            {
-                                int count = 0;
-                                foreach (var (dx, dy) in offsets)
-                                {
-                                    int nx = x, ny = y;
-                                    do
-                                    {
-                                        nx += dx;
-                                        ny += dy;
-                                        if (nx < 0 || ny < 0 || nx >= seatInRowCount || ny >= rowCount)
-                                            break;
-                                        if (prevList[ny][nx] == '#')
-                                        {
-                                            count++;
-                                            break;
-                                        }
-                                        if (prevList[ny][nx] == 'L')
-                                            break;
-                                    }
-                                    while (!onlyAdjacent);
-                                }
-                                if (currentSeat == 'L')
-                                {
-                                    if (count == 0)
-                                    {
-                                        currentSeat = '#';
-                                        isStable = false;
-                                        occupiedSeatsCount++;
-                                    }
-                                }
-                                else
-                                {
-                                    if (count >= maxOccupied)
-                                    {
-                                        currentSeat = 'L';
-                                        isStable = false;
-                                    }
-                                    else
-                                        occupiedSeatsCount++;
-                                }
-                            }
-                            newRow[x] = currentSeat;
-                        }
-                        newList.Add(new string(newRow));
-                    }
-                    prevList = newList;
-                }
+                    (seats, isStable, occupiedSeatsCount) = DoSeatIteration(seats, maxOccupied, onlyAdjacent);
 
                 return occupiedSeatsCount;
+            }
+
+            (List<string> newList, bool isStable, int occupiedSeatsCount) DoSeatIteration(IList<string> seats, int maxOccupied, bool onlyAdjacent)
+            {
+                List<string> newSeats = new List<string>();
+                int occupiedSeatsCount = 0;
+                bool isStable = true;
+
+                for (int y = 0; y < seats.Count; y++)
+                {
+                    var newRow = new char[seatInRowCount];
+                    for (int x = 0; x < seats[0].Length; x++)
+                    {
+                        char currentSeat = seats[y][x];
+                        if (currentSeat != '.')
+                        {
+                            int count = CountVisibleSeats(seats, onlyAdjacent, y, x);
+                            if (currentSeat == 'L' && count == 0)
+                                currentSeat = '#';
+                            else if(currentSeat == '#' && count >= maxOccupied)
+                                currentSeat = 'L';
+                        }
+                        if (currentSeat == '#')
+                            occupiedSeatsCount++;
+                        if(seats[y][x] != currentSeat)
+                            isStable = false;
+
+                        newRow[x] = currentSeat;
+                    }
+                    newSeats.Add(new string(newRow));
+                }
+
+                return (newSeats, isStable, occupiedSeatsCount);
+            }
+
+            int CountVisibleSeats(IList<string> seats, bool onlyAdjacent, int y, int x)
+            {
+                var offsets = new (int dx, int dy)[] { (-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1) };
+
+                int count = 0;
+                foreach (var (dx, dy) in offsets)
+                {
+                    int nx = x, ny = y;
+                    do
+                    {
+                        nx += dx;
+                        ny += dy;
+                        if (nx < 0 || ny < 0 || nx >= seatInRowCount || ny >= rowCount)
+                            break;
+                        if (seats[ny][nx] == '#')
+                        {
+                            count++;
+                            break;
+                        }
+                        if (seats[ny][nx] == 'L')
+                            break;
+                    }
+                    while (!onlyAdjacent);
+                }
+
+                return count;
             }
         }
     }
