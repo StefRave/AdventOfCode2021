@@ -19,59 +19,61 @@ namespace AdventOfCode2020
         public void DoDay12()
         {
             var input = File.ReadAllLines("input/input12.txt")
-                .Select(l => (instr: l[0], value: int.Parse(l[1..]);
+                .Select(l => (instr: l[0], value: int.Parse(l[1..])));
 
-            var ship = new Ship(0, 0, 0);
-            foreach (var item in input)
-                ship = ship.Execute(item.instr, item.value);
-            output.WriteLine($"Part1: {ship.ManhattanDistance}");
+            var ship = input.Aggregate(
+                new Ship(new Coord(0, 0), new Coord(1, 0)),
+                (s, item) => s.Execute(item.instr, item.value, Ship.MoveShip));
+            output.WriteLine($"Part1: {ship.Pos.ManhattanDistance}");
 
-            var shipWp = new ShipWaypoint(0, 0, 10, 1);
-            foreach (var item in input)
-                shipWp = shipWp.Execute(item.instr, item.value);
-            output.WriteLine($"Part2: {shipWp.ManhattanDistance}");
+            ship = input.Aggregate(
+                new Ship(new Coord(0, 0), new Coord(10, 1)),
+                (s, item) => s.Execute(item.instr, item.value, Ship.MoveWaypoint));
+            output.WriteLine($"Part2: {ship.Pos.ManhattanDistance}");
         }
 
-        record Ship(int X, int Y, int Angle)
+        record Coord(int X, int Y)
         {
-            public Ship Execute(char instr, int value)
+            public Coord Move(char instr, int value)
                 => instr switch
                 {
                     'N' => this with { Y = Y + value },
                     'E' => this with { X = X + value },
                     'S' => this with { Y = Y - value },
                     'W' => this with { X = X - value },
-                    'L' => this with { Angle = Angle - value },
-                    'R' => this with { Angle = Angle + value },
-                    'F' => this with { X = X + value * (int)Cos(Angle * PI / 180), Y = Y - value * (int)Sin(Angle * PI / 180) },
                 };
+
+            public Coord Rotate(int angle)
+                => angle switch
+                {
+                    90 => new Coord(Y, -X),
+                    180 => new Coord(-X, -Y),
+                    270 => new Coord(-Y, X),
+                };
+
             public int ManhattanDistance
                 => Abs(X) + Abs(Y);
         }
 
-        record ShipWaypoint(int X, int Y, int WX, int WY)
+        record Ship(Coord Pos, Coord WayPoint)
         {
-            public ShipWaypoint Execute(char instr, int value)
+            public Ship Execute(char instr, int value, MoveDelegate move)
                 => instr switch
                 {
-                    'N' => this with { WY = WY + value },
-                    'E' => this with { WX = WX + value },
-                    'S' => this with { WY = WY - value },
-                    'W' => this with { WX = WX - value },
-                    'L' => ShipWaypointRotateWaypointRight(360 - value),
-                    'R' => ShipWaypointRotateWaypointRight(value),
-                    'F' => this with { X = X + value * WX, Y = Y + value * WY },
-                };
-            public ShipWaypoint ShipWaypointRotateWaypointRight(int angle)
-                => angle switch
-                {
-                    90 => this with { WX = WY, WY = -WX },
-                    180 => this with { WX = -WX, WY = -WY },
-                    270 => this with { WX = -WY, WY = WX },
+                    'N' or 'E' or 'S' or 'W' => move(this, instr, value),
+                    'L' => this with { WayPoint = WayPoint.Rotate(360 - value) },
+                    'R' => this with { WayPoint = WayPoint.Rotate(value) },
+                    'F' => this with { Pos = new Coord(Pos.X + value * WayPoint.X, Pos.Y + value * WayPoint.Y) },
                 };
 
-            public int ManhattanDistance
-                => Abs(X) + Abs(Y);
+            public static Ship MoveWaypoint(Ship ship, char instr, int value)
+                => ship with { WayPoint = ship.WayPoint.Move(instr, value) };
+
+            public static Ship MoveShip(Ship ship, char instr, int value)
+                => ship with { Pos = ship.Pos.Move(instr, value) };
+
+
+            public delegate Ship MoveDelegate(Ship ship, char instr, int value);
         }
     }
 }
