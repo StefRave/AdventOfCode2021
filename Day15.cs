@@ -22,7 +22,7 @@ namespace AdventOfCode2020
         {
             var input = "2,15,0,9,1,20".Split(",").Select(int.Parse);
 
-            var lastSpoken = new Dictionary<int, int>();
+            var lastSpoken = new int[100000000];
             int turn = 1;
             int previousFoundTurn = 0;
             foreach (int n in input)
@@ -36,8 +36,7 @@ namespace AdventOfCode2020
 
             int AddNumber(int number)
             {
-                if (!lastSpoken.TryGetValue(number, out int prevTurn))
-                    prevTurn = 0;
+                int prevTurn = lastSpoken[number];
                 lastSpoken[number] = turn++;
                 return prevTurn;
             }
