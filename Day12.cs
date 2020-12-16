@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Linq;
 using Xunit;
 using Xunit.Abstractions;
@@ -41,6 +42,7 @@ namespace AdventOfCode2020
                     'E' => this with { X = X + value },
                     'S' => this with { Y = Y - value },
                     'W' => this with { X = X - value },
+                    _ => throw new ArgumentOutOfRangeException(nameof(instr))
                 };
 
             public Coord Rotate(int angle)
@@ -49,6 +51,7 @@ namespace AdventOfCode2020
                     90 => new Coord(Y, -X),
                     180 => new Coord(-X, -Y),
                     270 => new Coord(-Y, X),
+                    _ => throw new ArgumentOutOfRangeException(nameof(angle))
                 };
 
             public int ManhattanDistance
@@ -64,6 +67,7 @@ namespace AdventOfCode2020
                     'L' => this with { WayPoint = WayPoint.Rotate(360 - value) },
                     'R' => this with { WayPoint = WayPoint.Rotate(value) },
                     'F' => this with { Pos = new Coord(Pos.X + value * WayPoint.X, Pos.Y + value * WayPoint.Y) },
+                    _ => throw new ArgumentOutOfRangeException(nameof(instr))
                 };
 
             public static Ship MoveWaypoint(Ship ship, char instr, int value)
