@@ -87,7 +87,7 @@ namespace AdventOfCode2020
             }
         }
 
-        public void PrintGrid(char[,,,] grid, int round)
+        private void PrintGrid(char[,,,] grid, int round)
         {
             output.WriteLine($"Round {round}");
             for (int w = 0; w < grid.GetLength(0); w++)
