@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -18,77 +16,70 @@ namespace AdventOfCode2020
             this.output = output;
         }
 
-        readonly string testInput = @"0: 4 1 5
-1: 2 3 | 3 2
-2: 4 4 | 5 5
-3: 4 5 | 5 4
-4: ""a""
-5: ""b""";
-
-        [Theory]
-        [InlineData(0, "abbbab")]
-        public void PossiblePattern(int ruleNr, string pattern)
-            => Assert.True(pattern.Length == MatchLength(pattern.ToCharArray(), GetInstructions(testInput), ruleNr));
-
         [Fact]
         public void DoDay19()
         {
             var input = File.ReadAllText("input/input19.txt").SplitByDoubleNewLine();
-            Dictionary<int, object> instructions = GetInstructions(input[0]);
+            Dictionary<int, object> instructions = input[0]
+                .SplitByNewLine()
+                .Select(l => l.Split(": "))
+                .ToDictionary(split => int.Parse(split[0]), split => split[1][0] == '"' ? (object)split[1][1] : ParseNumbers(split[1]));
             var data = input[1].SplitByNewLine();
+
+
 
             int result = CountValid(instructions, data);
             output.WriteLine($"Part1: {result}");
 
             instructions[8] = ParseNumbers("42 | 42 8");
             instructions[11] = ParseNumbers("42 31 | 42 11 31");
-            
             result = CountValid(instructions, data);
             output.WriteLine($"Part2: {result}");
+
+            int[][] ParseNumbers(string v) => v.Split(" | ").Select(l => l.Split(" ").Select(int.Parse).ToArray()).ToArray();
         }
 
-        private int CountValid(Dictionary<int, object> instructions, string[] data) =>
-            data.Where(l => MatchLength(l.ToCharArray(), instructions, 0) == l.Length).Count();
-
-        private int MatchLength(Span<char> line, Dictionary<int, object> instructions, int ruleNr)
+        private int CountValid(Dictionary<int, object> instructions, string[] data)
         {
-            object instruction = instructions[ruleNr];
-            if (instruction is char)
-                return line[0] == (char)instruction ? 1 : 0;
+            return data.Where(l => MatchRuleNr(l.ToCharArray(), 0).Any(length => length == l.Length)).Count();
 
-            var options = (int[][])instruction;
-            foreach (int[] numbers in options)
+            ICollection<int> MatchRuleNr(Span<char> line, int ruleNr)
             {
-                var leftToMatch = line;
-                bool fail = false;
-                foreach (int number in numbers)
+                if (line.Length == 0)
+                    return new int[0];
+                return instructions[ruleNr] switch
                 {
-                    if (leftToMatch.Length == 0)
-                    {
-                        fail = true;
-                        break;
-                    }
-                    int length = MatchLength(leftToMatch, instructions, number);
-                    if (length == 0)
-                    {
-                        fail = true;
-                        break;
-                    }
-                    leftToMatch = leftToMatch.Slice(length);
-                }
-                if (!fail)
-                    return line.Length - leftToMatch.Length;
+                    char c => line[0] == c ? new int[] { 1 } : new int[0],
+                    int[][] options => MatchOptions(line, options),
+                    _ => throw new NotImplementedException()
+                };
             }
-            return 0;
-        }
 
-        private Dictionary<int, object> GetInstructions(string input)
-        {
-            return input.SplitByNewLine()
-                .Select(l => l.Split(": "))
-                .ToDictionary(split => int.Parse(split[0]), split => split[1][0] == '"' ? (object)split[1][1] : ParseNumbers(split[1]));
-        }
+            ICollection<int> MatchOptions(Span<char> line, int[][] options)
+            {
+                List<int> results = new();
+                foreach (int[] numbers in options)
+                    results.AddRange(Match(numbers, line));
+                return results;
 
-        private int[][] ParseNumbers(string v) => v.Split(" | ").Select(l => l.Split(" ").Select(int.Parse).ToArray()).ToArray();
+                ICollection<int> Match(Span<int> numbers, Span<char> leftToMatch)
+                {
+                    List<int> results = new();
+
+                    int number = numbers[0];
+                    numbers = numbers.Slice(1);
+                    ICollection<int> lengths = MatchRuleNr(leftToMatch, number);
+                    if (numbers.Length == 0)
+                        return lengths;
+
+                    foreach (int length in lengths)
+                    {
+                        foreach (int matchLength in Match(numbers, leftToMatch.Slice(length)))
+                            results.Add(matchLength + length);
+                    }
+                    return results;
+                }
+            }
+        }
     }
 }
