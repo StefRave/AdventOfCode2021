@@ -27,7 +27,6 @@ namespace AdventOfCode2020
             var data = input[1].SplitByNewLine();
 
 
-
             int result = CountValid(instructions, data);
             output.WriteLine($"Part1: {result}");
 
@@ -41,44 +40,39 @@ namespace AdventOfCode2020
 
         private int CountValid(Dictionary<int, object> instructions, string[] data)
         {
-            return data.Where(l => MatchRuleNr(l.ToCharArray(), 0).Any(length => length == l.Length)).Count();
+            return data.Where(l => MatchRuleNr(l.ToCharArray().AsMemory(), 0).Any(length => length == l.Length)).Count();
 
-            ICollection<int> MatchRuleNr(Span<char> line, int ruleNr)
+            IEnumerable<int> MatchRuleNr(Memory<char> line, int ruleNr)
             {
                 if (line.Length == 0)
                     return new int[0];
                 return instructions[ruleNr] switch
                 {
-                    char c => line[0] == c ? new int[] { 1 } : new int[0],
+                    char c => line.Span[0] == c ? new int[] { 1 } : new int[0],
                     int[][] options => MatchOptions(line, options),
                     _ => throw new NotImplementedException()
                 };
             }
 
-            ICollection<int> MatchOptions(Span<char> line, int[][] options)
+            IEnumerable<int> MatchOptions(Memory<char> line, int[][] options)
             {
-                List<int> results = new();
-                foreach (int[] numbers in options)
-                    results.AddRange(Match(numbers, line));
-                return results;
+                return 
+                    from int[] numbers in options
+                    from number in MatchNumbers(line, numbers)
+                    select number;
+            }
 
-                ICollection<int> Match(Span<int> numbers, Span<char> leftToMatch)
-                {
-                    List<int> results = new();
+            IEnumerable<int> MatchNumbers(Memory<char> leftToMatch, Memory<int> numbers)
+            {
+                int number = numbers.Span[0];
+                IEnumerable<int> lengths = MatchRuleNr(leftToMatch, number);
+                if (numbers.Length == 1)
+                    return lengths;
 
-                    int number = numbers[0];
-                    numbers = numbers.Slice(1);
-                    ICollection<int> lengths = MatchRuleNr(leftToMatch, number);
-                    if (numbers.Length == 0)
-                        return lengths;
-
-                    foreach (int length in lengths)
-                    {
-                        foreach (int matchLength in Match(numbers, leftToMatch.Slice(length)))
-                            results.Add(matchLength + length);
-                    }
-                    return results;
-                }
+                return
+                    from int length in lengths
+                    from int matchLength in MatchNumbers(leftToMatch.Slice(length), numbers.Slice(1))
+                    select matchLength + length;
             }
         }
     }
