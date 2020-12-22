@@ -20,16 +20,46 @@ namespace AdventOfCode2020
         {
             var input =
                 File.ReadAllText("input/input22.txt").SplitByDoubleNewLine();
-            var player1 = new Queue<int>(input[0].SplitByNewLine().Skip(1).Select(int.Parse));
-            var player2 = new Queue<int>(input[1].SplitByNewLine().Skip(1).Select(int.Parse));
+            var cardsPlayer1 = input[0].SplitByNewLine().Skip(1).Select(v => (char)int.Parse(v));
+            var cardsPlayer2 = input[1].SplitByNewLine().Skip(1).Select(v => (char)int.Parse(v));
 
-            while(player1.Count != 0 && player2.Count != 0)
+            output.WriteLine($"Part1: {DoIt(recurse: false)}");
+            output.WriteLine($"Part2: {DoIt(recurse: true)}");
+
+            long DoIt(bool recurse)
             {
-                string p1C = string.Join(", ", player1);
-                string p2C = string.Join(", ", player2);
-                int p1v = player1.Dequeue();
-                int p2v = player2.Dequeue();
-                if(p1v > p2v)
+                var deck1 = new Queue<char>(cardsPlayer1);
+                var deck2 = new Queue<char>(cardsPlayer2);
+                bool player1Wins = Play(deck1, deck2, recurse);
+                long result = (player1Wins ? deck1 : deck2).Reverse().Select((v, i) => v * (i + 1L)).Sum();
+                return result;
+            }
+        }
+
+        private static bool Play(Queue<char> player1, Queue<char> player2, bool recurse)
+        {
+            HashSet<string> player1History = new();
+            HashSet<string> player2History = new();
+
+            bool player1wins = true;
+            int round = 0;
+            while (player1.Count != 0 && player2.Count != 0)
+            {
+                string player1String = new string(player1.ToArray());
+                string player2String = new string(player2.ToArray());
+                if (player1History.Contains(player1String) || player2History.Contains(player2String))
+                    return true;
+                player1History.Add(player1String);
+                player2History.Add(player2String);
+
+                round++;
+                char p1v = player1.Dequeue();
+                char p2v = player2.Dequeue();
+                if (recurse && p1v <= player1.Count && p2v <= player2.Count)
+                    player1wins = Play(new Queue<char>(player1.Take(p1v)), new Queue<char>(player2.Take(p2v)), true);
+                else
+                    player1wins =  p1v > p2v;
+                if (player1wins)
                 {
                     player1.Enqueue(p1v);
                     player1.Enqueue(p2v);
@@ -40,14 +70,7 @@ namespace AdventOfCode2020
                     player2.Enqueue(p1v);
                 }
             }
-            var winner = ((player1.Count > 0) ? player1 : player2).Reverse().ToArray();
-            long result = winner.Select((v, i) => v * (i + 1L)).Sum();
-
-            output.WriteLine($"Part1: {result}");
-
-            //output.WriteLine($"Part2: {dangerousIngredients}");
+            return player1wins;
         }
-
-
     }
 }
