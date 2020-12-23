@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using Xunit;
 using Xunit.Abstractions;
@@ -18,36 +17,81 @@ namespace AdventOfCode2020
         [Fact]
         public void DoDay23()
         {
-#if true
-            string input = "389125467";
-#else
-            string input = "538914762";
-#endif
-            int len = input.Length;
-            char max = input.Max();
-            for (int i = 0; i < 100; i++)
-            {
-                int index = i % len;
-                char inputChar = input[index];
+            var input = "538914762";
 
-                string pickUp = (input + input).Substring(index + 1, 3);
-                string left = (input + input).Substring(index + 4, len - 4);
-                int insertIndex;
-                char destination = inputChar;
+            var cup1Node = Play(input.Select(c => c - '0'), 100);
+            string result = GetNumbersAfter1(cup1Node);
+            output.WriteLine($"Part1: {result}");
+
+            cup1Node = Play(input.Select(c => c - '0').Concat(Enumerable.Range(10, 1_000_000 - input.Length)), 10_000_000);
+            output.WriteLine($"Part2: {(long)cup1Node.Next.Value * cup1Node.Next.Next.Value}");
+        }
+
+        private static string GetNumbersAfter1(LinkedListNode<int> cup)
+        {
+            string result = "";
+            while (true)
+            {
+                cup = cup.Next ?? cup.List.First;
+                if (cup.Value == 1)
+                    break;
+                result += cup.Value.ToString();
+            }
+            return result;
+        }
+
+        private LinkedListNode<int> Play(IEnumerable<int> input, int iterations)
+        {
+            var cups = new LinkedList<int>(input);
+            LinkedListNode<int> current = cups.First;
+
+            var nodesByValue = new Dictionary<int, LinkedListNode<int>>();
+            while(current != null)
+            {
+                nodesByValue.Add(current.Value, current);
+                current = current.Next;
+            }
+
+            current = cups.First;
+            int max = input.Max();
+            List<LinkedListNode<int>> pickUp = new();
+            for (int i = 0; i < iterations; i++)
+            {
+                int currentValue = current.Value;
+                for (int j = 0; j < 3; j++)
+                {
+                    if (current.Next != null)
+                    {
+                        pickUp.Add(current.Next);
+                        cups.Remove(current.Next);
+                    }
+                    else
+                    {
+                        pickUp.Add(cups.First);
+                        cups.Remove(cups.First);
+                    }
+                }
+                int destination = currentValue;
                 do
                 {
                     destination--;
-                    if (destination == '0')
+                    if (destination == 0)
                         destination = max;
-                    insertIndex = left.IndexOf(destination) + 1;
-                } while (insertIndex <= 0);
-                string leftInsert = left.Substring(0, insertIndex) + pickUp + left.Substring(insertIndex);
+                } while (pickUp.Any(n => n.Value == destination));
 
-                input = leftInsert.Substring(len - 1 - index, index) + inputChar + leftInsert.Substring(0, len - index - 1);
+                var pos = nodesByValue[destination];
+                for (int j = 2; j >= 0; j--)
+                {
+                    cups.AddAfter(pos, pickUp[j]);
+                }
+                pickUp.Clear();
+
+                if (current.Next == null)
+                    current = cups.First;
+                else
+                    current = current.Next;
             }
-            int indexOf1 = input.IndexOf('1');
-            input = input.Substring(indexOf1 + 1) + input.Substring(0, indexOf1);
-            output.WriteLine($"Part1: {input}");
+            return nodesByValue[1];
         }
     }
 }
