@@ -43,7 +43,7 @@ namespace AdventOfCode2019
             for (i = 0; i < 100; i++)
                 for (j = 0; j < 100; j++)
                 {
-                    long[] memory = GetInput().ToArray();
+                    var memory = GetInput().ToList();
                     memory[1] = i;
                     memory[2] = j;
                     IntCode.ExecuteProgramm(memory, null);

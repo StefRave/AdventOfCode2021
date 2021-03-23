@@ -18,10 +18,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Input\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <None Update="Input\*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
