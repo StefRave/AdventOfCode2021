@@ -10,7 +10,7 @@ namespace AdventOfCode2019
     {
         private static string GetInput() => File.ReadAllText(@"Input/input07.txt");
 
-        private static int[] ParseInput(string v) => v.Split(",").Select(int.Parse).ToArray();
+        private static long[] ParseInput(string v) => v.Split(",").Select(long.Parse).ToArray();
 
 
         
@@ -20,22 +20,22 @@ namespace AdventOfCode2019
         [InlineData("3,26,1001,26,-4,26,3,27,1002,27,2,27,1,27,26,27,4,27,1001,28,-1,28,1005,28,6,99,0,0,5", "9,8,7,6,5", 139629729)]
         public void DoTests1(string programm, string phaseString, int expectedResult)
         {
-            int[] memory = ParseInput(programm);
-            int[] phases = ParseInput(phaseString);
+            long[] memory = ParseInput(programm);
+            long[] phases = ParseInput(phaseString);
 
-            int maxThrusterSignal = GetMaxThrusterSignal(memory, phases);
+            long maxThrusterSignal = GetMaxThrusterSignal(memory, phases);
             Assert.Equal(expectedResult, maxThrusterSignal);
         }
 
 
-        private static int GetMaxThrusterSignal(int[] memory, int[] phases)
+        private static long GetMaxThrusterSignal(long[] memory, long[] phases)
         {
-            int maxThrusterSignal = int.MinValue;
+            long maxThrusterSignal = int.MinValue;
             var orders = GetPermutations(phases, phases.Length).ToArray();
-            int[] bestOrder = null;
+            long[] bestOrder = null;
             foreach (var order in orders.Select(o => o.ToArray()))
             {
-                int thrusterSignal = DoLoop(memory, order, 0);
+                long thrusterSignal = DoLoop(memory, order, 0);
                 if (thrusterSignal > maxThrusterSignal)
                 {
                     maxThrusterSignal = thrusterSignal;
@@ -46,10 +46,10 @@ namespace AdventOfCode2019
             return maxThrusterSignal;
         }
 
-        private static int DoLoop(int[] memory, int[] order, int thrusterSignal = 0)
+        private static long DoLoop(long[] memory, long[] order, long thrusterSignal = 0)
         {
             bool allHalted = false;
-            var intCode = order.Select(val => new IntCode(memory.ToArray(), new int[] { val })).ToArray();
+            var intCode = order.Select(val => new IntCode(memory.ToArray(), new long[] { val })).ToArray();
 
             while (!allHalted)
             {
@@ -85,9 +85,9 @@ namespace AdventOfCode2019
         public void DoPart1()
         {
             var memory = ParseInput(GetInput());
-            var phases = new int[] { 0,1,2,3,4 };
+            var phases = new long[] { 0,1,2,3,4 };
 
-            int maxThrusterSignal = GetMaxThrusterSignal(memory, phases);
+            long maxThrusterSignal = GetMaxThrusterSignal(memory, phases);
             Assert.Equal(225056, maxThrusterSignal);
         }
 
@@ -95,9 +95,9 @@ namespace AdventOfCode2019
         public void DoPart2()
         {
             var memory = ParseInput(GetInput());
-            var phases = new int[] { 5,6,7,8,9 };
+            var phases = new long[] { 5,6,7,8,9 };
 
-            int maxThrusterSignal = GetMaxThrusterSignal(memory, phases);
+            long maxThrusterSignal = GetMaxThrusterSignal(memory, phases);
             Assert.Equal(14260332, maxThrusterSignal);
         }
     }

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Xunit;
@@ -8,7 +9,7 @@ namespace AdventOfCode2019
     {
         private static string GetInput() => File.ReadAllText(@"Input/input05.txt");
 
-        private static int[] ParseInput(string v) => v.Split(",").Select(int.Parse).ToArray();
+        private static List<long> ParseInput(string v) => v.Split(",").Select(long.Parse).ToList();
 
 
         [Theory]
@@ -25,9 +26,9 @@ namespace AdventOfCode2019
         [InlineData(@"3,21,1008,21,8,20,1005,20,22,107,8,21,20,1006,20,31,1106,0,36,98,0,0,1002,21,125,20,4,20,1105,1,46,104,999,1105,1,46,1101,1000,1,20,4,20,1105,1,46,98,99", 9, 1001)]
         public void DoTests(string programm, int input, int expectedResult)
         {
-            int[] memory = ParseInput(programm);
+            var memory = ParseInput(programm);
 
-            var result = IntCode.ExecuteProgramm(memory, new int[] { input });
+            var result = IntCode.ExecuteProgramm(memory, new long[] { input });
 
             Assert.Equal(expectedResult, result[0]);
         }
@@ -37,7 +38,7 @@ namespace AdventOfCode2019
         public void Test34()
         {
             var memory = ParseInput("3,0,4,0,99");
-            var input = new int[] { 1234 };
+            var input = new long[] { 1234 };
             var result = IntCode.ExecuteProgramm(memory, input);
             Assert.Equal(result[0], memory[0]);
         }
@@ -46,7 +47,7 @@ namespace AdventOfCode2019
         public void DoPart1()
         {
             var memory = ParseInput(GetInput());
-            var input = new int[] { 1 };
+            var input = new long[] { 1 };
             var result = IntCode.ExecuteProgramm(memory, input);
 
             Assert.Equal(6069343, result.Last());
@@ -56,7 +57,7 @@ namespace AdventOfCode2019
         public void DoPart2()
         {
             var memory = ParseInput(GetInput());
-            var input = new int[] { 5 };
+            var input = new long[] { 5 };
             var result = IntCode.ExecuteProgramm(memory, input);
 
             Assert.Equal(3188550, result.Last());
