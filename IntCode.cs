@@ -10,6 +10,8 @@ namespace AdventOfCode2019
         public Queue<long> Input { get; }
         public int ProgramCounter { get; private set; } = 0;
         public long RelativeBase { get; set; }
+        public Action InputProvider { set; private get; }
+        public long InstructionsExecuted { get; private set; }
 
         public IntCode(ICollection<long> memory, IEnumerable<long> input)
         {
@@ -33,6 +35,7 @@ namespace AdventOfCode2019
             while (!halt && ProgramCounter < Memory.Length)
             {
                 (ProgramCounter, halt) = ExecuteInstruction(ProgramCounter);
+                InstructionsExecuted++;
             }
         }
 
@@ -55,6 +58,8 @@ namespace AdventOfCode2019
             }
             else if (opcode == 3)
             {
+                if (Input.Count == 0)
+                    InputProvider.Invoke();
                 if (!Input.TryDequeue(out long tmp))
                     throw new InputNeededException();
                 SetMemory(tmp, mode);
