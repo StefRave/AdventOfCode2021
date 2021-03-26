@@ -58,7 +58,7 @@ namespace AdventOfCode2019
             }
             else if (opcode == 3)
             {
-                if (Input.Count == 0)
+                if (Input.Count == 0 && InputProvider != null)
                     InputProvider.Invoke();
                 if (!Input.TryDequeue(out long tmp))
                     throw new InputNeededException();

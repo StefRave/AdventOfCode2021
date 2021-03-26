@@ -1,3 +1,4 @@
+using AdventOfCode2019.Helpers;
 using FluentAssertions;
 using System;
 using System.Collections.Generic;
