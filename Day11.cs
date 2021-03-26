@@ -1,3 +1,4 @@
+using AdventOfCode2019.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -12,8 +13,9 @@ namespace AdventOfCode2019
         private static List<long> GetInput() => File.ReadAllText(@"Input/input11.txt").Split(",").Select(long.Parse).ToList();
 
 
-        const int White = 1;
-        const int Black = 0;
+        const char NoPaint = ' ';
+        const char White = '#';
+        const char Black = '.';
 
 
         [Fact]
@@ -21,46 +23,38 @@ namespace AdventOfCode2019
         {
             var memory = GetInput();
 
-            var dict = Paint(memory, Black);
-
-            Assert.Equal(2093, dict.Count);
+            var panel = Paint(memory, Black);
+            Assert.Equal(2093, panel.GroupSelect().Count(c => c != NoPaint));
+            
             memory = GetInput();
-            dict = Paint(memory, White);
-            var minMax = dict.Keys.Aggregate(new MinMax(0, 0, 0, 0), (MinMax o, (int x, int y) c) => 
-                new MinMax(Math.Min(o.minX, c.x), Math.Min(o.minY, c.y), Math.Max(o.maxX, c.x), Math.Max(o.maxY, c.y)));
-
-            int height = minMax.maxY - minMax.minY + 1;
-            int width = minMax.maxX - minMax.minX + 1;
-            char[][] panels = Enumerable.Range(0, height).Select(i => ".".PadRight(width).ToCharArray()).ToArray();
-            foreach (var kv in dict)
-                panels[kv.Key.Item2 - minMax.minY][kv.Key.Item1 - minMax.minX] = kv.Value  == White ? '#' : '.';
-            string[] result = panels.Select(ca => new string(ca)).ToArray();
+            panel = Paint(memory, White);
+            string display = panel.AsString();
         }
         record MinMax(int minX, int minY, int maxX, int maxY);
 
 
-        private static Dictionary<(int, int), int> Paint(List<long> memory, int startColor)
+        private static FlexArray2D<char> Paint(List<long> memory, int startColor)
         {
             var intCode = new IntCode(memory, new long[0]);
 
-            var dict = new Dictionary<(int, int), int>();
+            var array2D = new FlexArray2D<char>() { Default2D = NoPaint };
 
             int x = 0, y = 0;
 
             int outputIndex = 0;
             int angle = 0;
             int current = startColor;
-            dict[(x, y)] = current;
+            array2D[y][x] = (char)current;
 
             intCode.InputProvider = () =>
             {
                 if (intCode.Output.Count > 0)
                 {
-                    long color = intCode.Output[outputIndex++];
+                    long color = intCode.Output[outputIndex++] == 0 ? Black : White;
                     long second = intCode.Output[outputIndex++];
 
                     current = (int)color;
-                    dict[(x, y)] = current;
+                    array2D[y][x] = (char)current;
 
                     angle = (angle + (second == 0 ? 3 : 1)) % 4;
                     switch (angle)
@@ -72,13 +66,11 @@ namespace AdventOfCode2019
                     }
                 }
 
-                if (!dict.TryGetValue((x, y), out current))
-                    current = Black;
-
-                intCode.Input.Enqueue(current);
+                current = array2D[y][x];
+                intCode.Input.Enqueue(current == White ? 1 : 0);
             };
             intCode.Run();
-            return dict;
+            return array2D;
         }
     }
 }

@@ -12,6 +12,8 @@ namespace AdventOfCode2019.Helpers
             DefaultFunc = () => new FlexArray<T> { DefaultValue = Default2D };
         }
 
+        public IEnumerable<T> GroupSelect() => Items.SelectMany(item => item.Items);
+
         public T[][] GetFixedArray()
         {
             int min = 0;

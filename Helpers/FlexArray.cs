@@ -19,7 +19,7 @@ namespace AdventOfCode2019.Helpers
         {
             get
             {
-                if (i < Min || i >= Items.Count - Min)
+                if (i < Min || i - Min >= Items.Count)
                 {
                     T val = GetDefault();
                     this[i] = val;
