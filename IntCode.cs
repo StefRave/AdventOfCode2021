@@ -12,6 +12,7 @@ namespace AdventOfCode2019
         public long RelativeBase { get; set; }
         public Action InputProvider { set; private get; }
         public long InstructionsExecuted { get; private set; }
+        private bool haltRequested = false;
 
         public IntCode(ICollection<long> memory, IEnumerable<long> input)
         {
@@ -30,16 +31,16 @@ namespace AdventOfCode2019
 
         public void Run()
         {
-            bool halt = false;
+            haltRequested = false;
 
-            while (!halt && ProgramCounter < Memory.Length)
+            while (!haltRequested && ProgramCounter < Memory.Length)
             {
-                (ProgramCounter, halt) = ExecuteInstruction(ProgramCounter);
+                ProgramCounter = ExecuteInstruction(ProgramCounter);
                 InstructionsExecuted++;
             }
         }
 
-        private (int index, bool halt) ExecuteInstruction(int opcodeOffset)
+        private int ExecuteInstruction(int opcodeOffset)
         {
             int index = opcodeOffset;
             long opcode = Memory[index++];
@@ -60,9 +61,12 @@ namespace AdventOfCode2019
             {
                 if (Input.Count == 0 && InputProvider != null)
                     InputProvider.Invoke();
-                if (!Input.TryDequeue(out long tmp))
-                    throw new InputNeededException();
-                SetMemory(tmp, mode);
+                if (!haltRequested)
+                {
+                    if (!Input.TryDequeue(out long tmp))
+                        throw new InputNeededException();
+                    SetMemory(tmp, mode);
+                }
             }
             else if (opcode == 4)
                 Output.Add(GetInput(mode));
@@ -73,7 +77,7 @@ namespace AdventOfCode2019
                 if ((opcode == 5 && tmp != 0) || (opcode == 6 && tmp == 0))
                     index = (int)jmpPos;
             }
-            else    if (opcode == 7 || opcode == 8)
+            else if (opcode == 7 || opcode == 8)
             {
                 long input1 = GetInput(mode);
                 long input2 = GetInput(mode / 10);
@@ -86,11 +90,11 @@ namespace AdventOfCode2019
                 RelativeBase += input1;
             }
             else if (opcode == 99)
-                return(index, halt: true);
+                haltRequested = true;
             else
                 throw new ArgumentOutOfRangeException(nameof(index), $"Unknown opcode {opcode}");
 
-            return (index, halt: false);
+            return index;
 
             void SetMemory(long value, int opcodeDiv)
             {
@@ -116,6 +120,8 @@ namespace AdventOfCode2019
                 };
             }
         }
+
+        public void Halt() => haltRequested = true;
     }
 
     public class ExtendedMemory

@@ -135,7 +135,7 @@ namespace AdventOfCode2019
 
             long totalFuel = CalculateMaxFeul(ingredients);
 
-            Assert.Equal(82892753, totalFuel);
+            Assert.Equal(1935265, totalFuel);
         }
     }
 }
