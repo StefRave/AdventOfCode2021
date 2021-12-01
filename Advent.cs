@@ -7,7 +7,7 @@ using Xunit;
 
 namespace AdventOfCode2021
 {
-    public class Helper
+    public class Advent
     {
         public static string[] ReadInputLines([CallerFilePath] string callerFilePath = null)
         {

@@ -1,7 +1,6 @@
 using System.Linq;
 using Xunit;
 using Xunit.Abstractions;
-using static AdventOfCode2021.Helper;
 
 namespace AdventOfCode2021
 {
@@ -17,14 +16,31 @@ namespace AdventOfCode2021
         [Fact]
         public void Run()
         {
-            var input1 = ReadInputLines()
+            var input = Advent.ReadInputLines()
                 .Select(c => int.Parse(c))
                 .ToArray();
 
-            AssertAnswer1("answer1");
+            int prev = input[0];
+            int countHigher = 0;
+            for (int i = 1; i < input.Length; i++)
+            {
+                if (prev < input[i])
+                    countHigher++;
+                prev = input[i];
+            }
+            Advent.AssertAnswer1(countHigher);
 
 
-            AssertAnswer2(2);
+            long prev3 = input[0] + input[1] + input[2];
+            countHigher = 0;
+            for (int i = 3; i < input.Length; i++)
+            {
+                long current3 = prev3 - input[i - 3] + input[i];
+                if (prev3 < current3)
+                    countHigher++;
+                prev3 = current3;
+            }
+            Advent.AssertAnswer2(countHigher);
         }
     }
 }

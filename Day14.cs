@@ -5,11 +5,11 @@ using Xunit.Abstractions;
 
 namespace AdventOfCode2021
 {
-    public class Day02
+    public class Day14
     {
         private readonly ITestOutputHelper output;
 
-        public Day02(ITestOutputHelper output)
+        public Day14(ITestOutputHelper output)
         {
             this.output = output;
         }
