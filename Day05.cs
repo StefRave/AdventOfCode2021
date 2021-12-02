@@ -17,7 +17,7 @@ namespace AdventOfCode2021
         [Fact]
         public void Run()
         {
-            var input1 = Advent.ReadInputLines()
+            var input = Advent.ReadInputLines()
                 .Select(c => int.Parse(c))
                 .ToArray();
 

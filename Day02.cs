@@ -3,27 +3,53 @@ using System.Linq;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace AdventOfCode2021
+namespace AdventOfCode2021;
+
+public class Day02
 {
-    public class Day02
+    private readonly ITestOutputHelper output;
+
+    public Day02(ITestOutputHelper output)
     {
-        private readonly ITestOutputHelper output;
+        this.output = output;
+    }
 
-        public Day02(ITestOutputHelper output)
+    [Fact]
+    public void Run()
+    {
+        var input = Advent.ReadInputLines()
+            .Select(c => c.Split(' '))
+            .Select(s => new { Instr = s[0], Steps = int.Parse(s[1]) })
+            .ToArray();
+
+        int hor = 0;
+        int dep = 0;
+        foreach (var item in input)
         {
-            this.output = output;
+            switch(item.Instr)
+            {
+                case "forward": hor += item.Steps; break;
+                case "down": dep += item.Steps; break;
+                case "up": dep -= item.Steps; break;
+                default: throw new Exception($"unknown {item.Instr}");
+            }
         }
 
-        [Fact]
-        public void Run()
+        Advent.AssertAnswer1((long)hor * dep);
+
+        hor = 0;
+        dep = 0;
+        int aim = 0;
+        foreach (var item in input)
         {
-            var input1 = Advent.ReadInputLines()
-                .Select(c => int.Parse(c))
-                .ToArray();
-
-            Advent.AssertAnswer1("answer1");
-
-            Advent.AssertAnswer2(2);
+            switch (item.Instr)
+            {
+                case "forward": hor += item.Steps; dep += item.Steps * aim; break;
+                case "down": aim += item.Steps; break;
+                case "up": aim -= item.Steps; break;
+                default: throw new Exception($"unknown {item.Instr}");
+            }
         }
+        Advent.AssertAnswer2((long)hor * dep);
     }
 }
