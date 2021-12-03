@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Xunit;
 using Xunit.Abstractions;
@@ -17,13 +18,49 @@ namespace AdventOfCode2021
         [Fact]
         public void Run()
         {
-            var input = Advent.ReadInputLines()
-                .Select(c => int.Parse(c))
+            var inputLines = Advent.ReadInputLines();
+            var input = inputLines
+                .Select(line => Convert.ToInt64(line, 2))
                 .ToArray();
+            int lineLength = inputLines[0].Length;
 
-            Advent.AssertAnswer1("answer1");
+            long gamma = 0;
+            for (int j = 0; j < lineLength; j++)
+            {
+                long bit = 1 << (lineLength - 1 - j);
+                int ones = input.Count(line => (line & bit) != 0);
+                int zeros = input.Length - ones;
 
-            Advent.AssertAnswer2(2);
+                if (ones > zeros)
+                    gamma += bit;
+            }
+            long epsilon = ((1 << lineLength) - 1) ^ gamma;
+            Advent.AssertAnswer1((long)gamma * epsilon);
+
+            long oxygen = Remaining(input, match: true);
+            long co2 = Remaining(input, match: false);
+            Advent.AssertAnswer2(oxygen * co2);
+
+
+
+            long Remaining(long[] input, bool match)
+            {
+                var list = input.AsEnumerable();
+                for (int j = 0; j < lineLength; j++)
+                {
+                    long bit = 1 << (lineLength - 1 - j);
+                    int ones = list.Count(line => (line & bit) != 0);
+                    int zeros = list.Count() - ones;
+
+                    bool oneOrZero = match ? ones >= zeros : zeros > ones;
+                    var remaining = list.Where(line => ((line & bit) != 0) == oneOrZero).ToArray();
+
+                    if (remaining.Count() <= 1)
+                        return remaining.First();
+                    list = remaining;
+                }
+                throw new Exception("not found");
+            }
         }
     }
 }
