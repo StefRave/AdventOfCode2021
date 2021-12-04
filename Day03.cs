@@ -35,7 +35,7 @@ namespace AdventOfCode2021
                     gamma += bit;
             }
             long epsilon = ((1 << lineLength) - 1) ^ gamma;
-            Advent.AssertAnswer1((long)gamma * epsilon);
+            Advent.AssertAnswer1(gamma * epsilon);
 
             long oxygen = Remaining(input, match: true);
             long co2 = Remaining(input, match: false);

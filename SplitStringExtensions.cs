@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace AdventOfCode2020
+namespace AdventOfCode2021
 {
     public static class SplitStringExtensions
     {
