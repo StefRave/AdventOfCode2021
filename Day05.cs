@@ -40,23 +40,12 @@ namespace AdventOfCode2021
             var array = Enumerable.Range(0, maxY).Select(i => "".PadRight(maxX, '.').ToArray()).ToArray();
             foreach (var vector in input)
             {
-                if (vector.Y1 == vector.Y2)
+                if(includeDiagonal || vector.Y1 == vector.Y2 || vector.X1 == vector.X2)
                 {
-                    int add = vector.X1 < vector.X2 ? 1 : -1;
-                    for (int i = 0; i <= Math.Abs(vector.X1 - vector.X2); i++)
-                        SetPixel(vector.Y1, vector.X1 + i * add);
-                }
-                else if (vector.X1 == vector.X2)
-                {
-                    int add = vector.Y1 < vector.Y2 ? 1 : -1;
-                    for (int i = 0; i <= Math.Abs(vector.Y1 - vector.Y2); i++)
-                        SetPixel(vector.Y1 + i * add, vector.X1);
-                }
-                else if(includeDiagonal)
-                {
-                    int addX = vector.X1 < vector.X2 ? 1 : -1;
-                    int addY = vector.Y1 < vector.Y2 ? 1 : -1;
-                    for (int i = 0; i <= Math.Abs(vector.Y1 - vector.Y2); i++)
+                    int addX = vector.X2.CompareTo(vector.X1);
+                    int addY = vector.Y2.CompareTo(vector.Y1);
+                    int steps = Math.Max(Math.Abs(vector.X1 - vector.X2), Math.Abs(vector.Y1 - vector.Y2));
+                    for (int i = 0; i <= steps; i++)
                         SetPixel(vector.Y1 + i * addY, vector.X1 + i * addX);
                 }
             }
