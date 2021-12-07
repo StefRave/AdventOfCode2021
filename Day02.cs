@@ -1,8 +1,3 @@
-using System;
-using System.Linq;
-using Xunit;
-using Xunit.Abstractions;
-
 namespace AdventOfCode2021;
 
 public class Day02
