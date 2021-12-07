@@ -13,24 +13,24 @@ public class Day07
     public void Run()
     {
         var input = Advent.ReadInput().Split(',').Select(int.Parse).OrderBy(x => x).ToArray();
-        int minTotalFeulNeeded = CalculateFeul(input, x => x);
-        Advent.AssertAnswer1(minTotalFeulNeeded);
+        int minTotalFuelNeeded = CalculateFuel(input, x => x);
+        Advent.AssertAnswer1(minTotalFuelNeeded);
         
-        minTotalFeulNeeded = CalculateFeul(input, x => x * (x + 1) / 2);
-        Advent.AssertAnswer2(minTotalFeulNeeded);
+        minTotalFuelNeeded = CalculateFuel(input, x => x * (x + 1) / 2);
+        Advent.AssertAnswer2(minTotalFuelNeeded);
     }
 
-    private static int CalculateFeul(int[] input, Func<int, int> calc)
+    private static int CalculateFuel(int[] input, Func<int, int> calc)
     {
-        int minTotalFeulNeeded = int.MaxValue;
+        int minTotalFuelNeeded = int.MaxValue;
         for (int i = input[0]; i < input[^1]; i++)
         {
-            int totalFeulNeeded = input.Sum(x => calc(Math.Abs(x - i)));
-            if (totalFeulNeeded < minTotalFeulNeeded)
-                minTotalFeulNeeded = totalFeulNeeded;
+            int totalFuelNeeded = input.Sum(x => calc(Math.Abs(x - i)));
+            if (totalFuelNeeded < minTotalFuelNeeded)
+                minTotalFuelNeeded = totalFuelNeeded;
             else
                 break;
         }
-        return minTotalFeulNeeded;
+        return minTotalFuelNeeded;
     }
 }
