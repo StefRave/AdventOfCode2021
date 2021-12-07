@@ -17,13 +17,26 @@ namespace AdventOfCode2021
         [Fact]
         public void Run()
         {
-            var input = Advent.ReadInputLines()
-                .Select(c => int.Parse(c))
-                .ToArray();
+            var input = Advent.ReadInput().Split(',').Select(int.Parse).OrderBy(x => x).ToArray();
+            int minTotalFeulNeeded = CalculateFeul(input, x => x);
+            Advent.AssertAnswer1(minTotalFeulNeeded);
+            
+            minTotalFeulNeeded = CalculateFeul(input, x => x * (x + 1) / 2);
+            Advent.AssertAnswer2(minTotalFeulNeeded);
+        }
 
-            Advent.AssertAnswer1("answer1");
-
-            Advent.AssertAnswer2(2);
+        private static int CalculateFeul(int[] input, Func<int, int> calc)
+        {
+            int minTotalFeulNeeded = int.MaxValue;
+            for (int i = input[0]; i < input[^1]; i++)
+            {
+                int totalFeulNeeded = input.Sum(x => calc(Math.Abs(x - i)));
+                if (totalFeulNeeded < minTotalFeulNeeded)
+                    minTotalFeulNeeded = totalFeulNeeded;
+                else
+                    break;
+            }
+            return minTotalFeulNeeded;
         }
     }
 }
