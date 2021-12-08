@@ -19,7 +19,7 @@ public class Advent
 
     private static string GetInputName(string callerFilePath)
     {
-        var match = Regex.Match(callerFilePath, @"(\d+)\.cs");
+        var match = Regex.Match(callerFilePath, @"(\d+)\D*\.cs");
         if (!match.Success)
             throw new Exception($"Number not found in test {callerFilePath}");
         string number = match.Groups[1].Value;
