@@ -67,7 +67,6 @@ b    .  b    .  .    c  b    c  b    c
     {
         string[] digits = new string[10];
         var signalsPerLength = inputSignal.GroupBy(s => s.Length).ToDictionary(g => g.Key, g => g.ToHashSet());
-        int cd = 1000;
         while(signalsPerLength.Any())
         {
             foreach (var (segments, signals) in signalsPerLength.Where(kv => kv.Value.Count == 1).ToArray())
