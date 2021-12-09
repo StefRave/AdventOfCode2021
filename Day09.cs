@@ -15,69 +15,47 @@ public class Day09
         var input = Advent.ReadInputLines()
             .Select(line => line.Select(c => c - '0').ToArray())
             .ToArray();
-        
-        var lowPoints = new List<Point>();
+
+        var lowPoints = new List<(int x, int y)>();
         int maxY = input.Length;
         int maxX = input[0].Length;
         for (int y = 0; y < maxY; y++)
-        {
             for (int x = 0; x < maxX; x++)
-            {
-                var points = new List<int>();
-                if (x > 0)
-                    points.Add(input[y][x - 1]);
-                if (y > 0)
-                    points.Add(input[y - 1][x]);
-                if (y < input.Length - 1)
-                    points.Add(input[y + 1][x]);
-                if (x < input[0].Length - 1)
-                    points.Add(input[y][x + 1]);
+                if (Adjacent(x, y).All(adj => input[y][x] < input[adj.y][adj.x]))
+                    lowPoints.Add((x, y));
 
-                if (points.Min() > input[y][x])
-                {
-                    lowPoints.Add(new(x, y));
-                }
-            }
-        }
-        int lowPointSum = lowPoints.Select(p => input[p.Y][p.X] + 1).Sum();
+        int lowPointSum = lowPoints.Select(p => input[p.y][p.x] + 1).Sum();
         Advent.AssertAnswer1(lowPointSum);
 
+        var basinSizes = lowPoints.Select(p => FloodFill(p.x, p.y)).OrderByDescending(p => p).ToArray();
+        Advent.AssertAnswer2(basinSizes[0] * basinSizes[1] * basinSizes[2]);
 
-        var basinSizes = new List<long>();
-        foreach (var lowPoint in lowPoints)
+        int FloodFill(int x, int y)
         {
-            int pointsChanged = FloodFill(lowPoint);
-            basinSizes.Add(pointsChanged);
-        }
-        basinSizes.Sort();
-        Advent.AssertAnswer2(basinSizes[^1] * basinSizes[^2] * basinSizes[^3]);
-
-
-        int FloodFill(Point pt)
-        {
-            Stack<Point> pixels = new Stack<Point>();
-            pixels.Push(pt);
+            var pixels = new Stack<(int x, int y)>();
             int pointsChanged = 0;
+
+            pixels.Push((x, y));
             while (pixels.Count > 0)
             {
-                Point a = pixels.Pop();
-                if (a.X < maxX && a.X >= 0 && a.Y < maxY && a.Y >= 0)
+                var p = pixels.Pop();
+                if (input[p.y][p.x] != 9)
                 {
-
-                    if (input[a.Y][a.X] != 9)
-                    {
-                        pointsChanged++;
-                        input[a.Y][a.X] = 9;
-                        pixels.Push(new Point(a.X - 1, a.Y));
-                        pixels.Push(new Point(a.X + 1, a.Y));
-                        pixels.Push(new Point(a.X, a.Y - 1));
-                        pixels.Push(new Point(a.X, a.Y + 1));
-                    }
+                    pointsChanged++;
+                    input[p.y][p.x] = 9;
+                    foreach (var adj in Adjacent(p.x, p.y))
+                        pixels.Push((adj.x, adj.y));
                 }
             }
             return pointsChanged;
         }
-    }
 
-    public record Point(int X, int Y);
+        IEnumerable<(int x, int y)> Adjacent(int x, int y)
+        {
+            if (x > 0) yield return (x - 1, y);
+            if (y > 0) yield return (x, y - 1);
+            if (x < maxX - 1) yield return (x + 1, y);
+            if (y < maxY - 1) yield return (x, y + 1);
+        }
+    }
 }

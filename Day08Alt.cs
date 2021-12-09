@@ -63,50 +63,62 @@ b    .  b    .  .    c  b    c  b    c
         Advent.AssertAnswer2(answer2);
     }
 
+
     private static int GetOutputValue(string[] inputSignal, string[] output, List<string> exampleDigits)
     {
+        var optionsByLength = exampleDigits
+            .Select((digits, number) => (digits, number))
+            .GroupBy(di => di.digits.Length)
+            .ToDictionary(g => g.Key, g => g.ToHashSet());
+        
         string[] digits = new string[10];
-        var signalsPerLength = inputSignal.GroupBy(s => s.Length).ToDictionary(g => g.Key, g => g.ToHashSet());
-        while(signalsPerLength.Any())
+
+        var toFind = new Queue<string>(inputSignal);
+        while (toFind.Count > 0)
         {
-            foreach (var (segments, signals) in signalsPerLength.Where(kv => kv.Value.Count == 1).ToArray())
+            string signal = toFind.Dequeue();
+
+            var options = optionsByLength[signal.Length];
+            if(options.Count() == 1)
             {
+                var found = options.First();
+                digits[found.number] = signal;
+                optionsByLength.Remove(signal.Length);
+            }
+            else
+            {
+                bool found = false;
                 for (int i = 0; i < digits.Length; i++)
                 {
-                    if (digits[i] == null && exampleDigits[i].Length == segments)
-                    {
-                        digits[i] = signals.First();
-                        break;
-                    }
-                }
-                signalsPerLength.Remove(segments);
-            }
-            for (int i = 0; i < digits.Length; i++)
-            {
-                if (digits[i] != null)
-                    continue;
-                var possibleSignals = signalsPerLength[exampleDigits[i].Length];
-
-                for (int j = 0; j < digits.Length; j++)
-                {
-                    if (j == i || digits[j] == null)
+                    if (digits[i] == null)
                         continue;
-                    var exceptCount = exampleDigits[i].Intersect(exampleDigits[j]).Count();
-                    var p = possibleSignals.Where(s => digits[j].Intersect(s).Count() == exceptCount).ToList();
-                    if (p.Count != 1)
+                    int? foundNumber = null;
+                    string foundDigits = null;
+                    foreach (var (candidateDigits, candidateNumber) in options)
                     {
-                        exceptCount = exampleDigits[j].Intersect(exampleDigits[i]).Count();
-                        p = possibleSignals.Where(s => s.Intersect(digits[j]).Count() == exceptCount).ToList();
+                        if(candidateDigits.Intersect(exampleDigits[i]).Count() == signal.Intersect(digits[i]).Count() &&
+                            exampleDigits[i].Intersect(candidateDigits).Count() == digits[i].Intersect(signal).Count())
+                        {
+                            foundDigits = candidateDigits;
+                            if (foundNumber == null)
+                                foundNumber = candidateNumber;
+                            else
+                            {
+                                foundNumber = null; // found more than once
+                                break;
+                            }
+                        }
                     }
-                    if (p.Count == 1)
+                    if (foundNumber != null)
                     {
-                        digits[i] = p.First();
-                        possibleSignals.Remove(digits[i]);
-                        if (possibleSignals.Count == 0)
-                            signalsPerLength.Remove(digits[i].Length);
+                        digits[foundNumber.Value] = signal;
+                        options.Remove((foundDigits, foundNumber.Value));
+                        found = true;
                         break;
                     }
                 }
+                if (!found)
+                    toFind.Enqueue(signal);
             }
         }
         return output.Aggregate(0, (acc, val) => acc * 10 + Array.IndexOf(digits, val));
