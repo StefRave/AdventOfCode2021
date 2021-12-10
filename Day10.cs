@@ -2,17 +2,9 @@ namespace AdventOfCode2021;
 
 public class Day10
 {
-    private readonly ITestOutputHelper output;
-
-    record Day10Data(char Open, char Close, int ScoreClose, int ScoreCorrupt);
-    private static Day10Data[] day10data = new[]
-    {
-        new Day10Data('(', ')', 1, 3),
-        new Day10Data('[', ']', 2, 57),
-        new Day10Data('{', '}', 3, 1197),
-        new Day10Data('<', '>', 4, 25137),
-    };
-    private static Dictionary<char, Day10Data> dataPerOpenChar = day10data.ToDictionary(x => x.Open);
+    private static int ScoreCorrupted(char c) => c switch { ')' => 3, ']' => 57, '}' => 1197, '>' => 25137};
+    private static int ScoreClose(char c) => c switch { ')' => 1, ']' => 2, '}' => 3, '>' => 4 };
+    private static char? CloseForOpen(char c) => c switch { '(' => ')', '[' => ']', '{' => '}', '<' => '>', _ => null };
 
     [Fact]
     public void Run()
@@ -23,32 +15,27 @@ public class Day10
 
         foreach (var line in input)
         {
-            var stack = new Stack<Day10Data>();
-            bool error = false;
-
+            var stack = new Stack<char>();
+            char? corruptCharacter = null;
             foreach (char c in line)
             {
-                bool isOpen = dataPerOpenChar.TryGetValue(c, out var data);
-                if (isOpen)
-                    stack.Push(data);
+                char? matchingClose = CloseForOpen(c);
+                if (matchingClose.HasValue)
+                    stack.Push(matchingClose.Value);
                 else
                 {
-                    data = stack.Pop();
-                    if (c != data.Close)
+                    char expectedClose = stack.Pop();
+                    if (c != expectedClose)
                     {
-                        totalCorruptPoints += day10data.First(d => d.Close == c).ScoreCorrupt;
-                        error = true;
+                        corruptCharacter = c;
                         break;
                     }
                 }
             }
-            if (!error && stack.Count > 0)
-            {
-                long totalLineScore = 0;
-                foreach (var day10Data in stack)
-                    totalLineScore = totalLineScore * 5 + day10Data.ScoreClose;
-                lineScores.Add(totalLineScore);
-            }
+            if(corruptCharacter.HasValue)
+                totalCorruptPoints += ScoreCorrupted(corruptCharacter.Value);
+            else if (stack.Count > 0)
+                lineScores.Add(stack.Aggregate(0, (acc, c) => acc * 5 + ScoreClose(c)));
         }
         Advent.AssertAnswer1(totalCorruptPoints);
 
