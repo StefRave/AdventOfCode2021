@@ -35,7 +35,7 @@ public class Day10
             if(corruptCharacter.HasValue)
                 totalCorruptPoints += ScoreCorrupted(corruptCharacter.Value);
             else if (stack.Count > 0)
-                lineScores.Add(stack.Aggregate(0, (acc, c) => acc * 5 + ScoreClose(c)));
+                lineScores.Add(stack.Aggregate(0L, (acc, c) => acc * 5 + ScoreClose(c)));
         }
         Advent.AssertAnswer1(totalCorruptPoints);
 
