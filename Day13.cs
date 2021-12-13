@@ -46,8 +46,9 @@ public class Day13
             .ToArray();
     }
 
-    private (int y, int x) FoldX((int y, int x) coord, int pos) => (coord.y, (coord.x < pos) ? coord.x : pos - (coord.x - pos));
-    private (int y, int x) FoldY((int y, int x) coord, int pos) => ((coord.y < pos) ? coord.y : pos - (coord.y - pos), coord.x);
+    private static (int y, int x) FoldX((int y, int x) coord, int pos) => (coord.y, Fold(coord.x, pos));
+    private static (int y, int x) FoldY((int y, int x) coord, int pos) => (Fold(coord.y, pos), coord.x);
+    private static int Fold(int n, int pos) => (n < pos) ? n : pos - (n - pos);
 
     private void DisplayCharacters((int y, int x)[] coords)
     {
