@@ -2,12 +2,10 @@
 
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
-
     <IsPackable>false</IsPackable>
-
     <Configurations>Debug;Release;DebugSample</Configurations>
-
     <ImplicitUsings>enable</ImplicitUsings>
+    <NoWarn>1701;1702;CS8509</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

@@ -1,3 +1,6 @@
+using System.Text;
+using System.Text.RegularExpressions;
+
 namespace AdventOfCode2021;
 
 public class Day13
@@ -12,12 +15,49 @@ public class Day13
     [Fact]
     public void Run()
     {
-        var input = Advent.ReadInputLines()
-            .Select(c => int.Parse(c))
+        var input = Advent.ReadInput()
+            .SplitByDoubleNewLine();
+        var coords = input[0].SplitByNewLine()
+            .Select(line => line.Split(',').Select(n => int.Parse(n)).ToArray())
+            .Select(line => (y: line[1], x: line[0]))
+            .ToArray();
+        var instrs = input[1]
+            .SplitByNewLine()
+            .Select(line => Regex.Match(line, @"([xy])=(\d+)"))
+            .Select(m => (xory: m.Groups[1].Value[0], pos: int.Parse(m.Groups[2].Value)))
             .ToArray();
 
-        Advent.AssertAnswer1("answer1");
+        coords = Fold(coords, instrs[0].xory, instrs[0].pos);
+        Advent.AssertAnswer1(coords.Length);
 
-        Advent.AssertAnswer2(2);
+        foreach (var instr in instrs.Skip(0))
+            coords = Fold(coords, instr.xory, instr.pos);
+
+        DisplayCharacters(coords);
+
+        //Advent.AssertAnswer2(word);
+    }
+
+    private (int y, int x)[] Fold((int y, int x)[] coords, char xory, int pos)
+    {
+        return coords
+            .Select(coord => xory == 'x' ? FoldX(coord, pos) : FoldY(coord, pos))
+            .Distinct()
+            .ToArray();
+    }
+
+    private (int y, int x) FoldX((int y, int x) coord, int pos) => (coord.y, (coord.x < pos) ? coord.x : pos - (coord.x - pos));
+    private (int y, int x) FoldY((int y, int x) coord, int pos) => ((coord.y < pos) ? coord.y : pos - (coord.y - pos), coord.x);
+
+    private void DisplayCharacters((int y, int x)[] coords)
+    {
+        int xMax = coords.Max(coord => coord.x);
+        int yMax = coords.Max(coord => coord.y);
+        var array = Enumerable.Range(0, yMax + 1)
+            .Select(i => new StringBuilder(new string("".PadRight(xMax + 1, ' ').ToArray())))
+            .ToArray();
+        foreach (var (y, x) in coords)
+            array[y][x] = '*';
+        output.WriteLine(string.Join('\n', array.Select(sb => sb.ToString())));
     }
 }
