@@ -1,4 +1,4 @@
-﻿namespace AdventOfCode2021;
+﻿namespace AdventOfCode2021.Helpers;
 
 public static class SplitStringExtensions
 {
