@@ -1,2 +1,2 @@
-sampleanswer1
-sampleanswer2
+40
+315
