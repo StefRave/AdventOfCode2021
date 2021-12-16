@@ -2,13 +2,6 @@ namespace AdventOfCode2021;
 
 public class Day16
 {
-    private readonly ITestOutputHelper output;
-
-    public Day16(ITestOutputHelper output)
-    {
-        this.output = output;
-    }
-
     [Fact]
     public void Run()
     {
@@ -74,35 +67,19 @@ public class Day16
         int bits;
         int bitsLeft;
 
-        public bool IsEndOfInput => input.Length == index && bitsLeft == 0;
         public int Position => index * 4 - bitsLeft;
 
         public Parser(string input) => this.input = input;
 
         public int GetBits(int numberOfBitsNeeded)
         {
-            int result = 0;
-            int bitsInResult = 0;
-            while (true)
+            while (bitsLeft < numberOfBitsNeeded)
             {
-                int getBits = Math.Min(bitsLeft, Math.Min(4, numberOfBitsNeeded - bitsInResult));
-                result = (result << getBits) + (bits >> (bitsLeft - getBits));
-                bitsInResult += getBits;
-                bitsLeft -= getBits;
-                bits &= 0xf >> (4 - bitsLeft);
-                if (bitsInResult == numberOfBitsNeeded)
-                    break;
-
-                bits = Convert.ToInt32(input.Substring(index++, 1), 16);
-                bitsLeft = 4;
+                bits = (bits << 4) + Convert.ToInt32(input.Substring(index++, 1), 16);
+                bitsLeft += 4;
             }
-            return result;
-        }
-
-        public void Clear()
-        {
-            bits = 0;
-            bitsLeft = 0;
+            bitsLeft -= numberOfBitsNeeded;
+            return (bits >> bitsLeft) & (0xffff >> (16 - numberOfBitsNeeded));
         }
     }
 }
