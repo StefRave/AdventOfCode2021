@@ -30,8 +30,8 @@ public class Day13
         coords = Fold(coords, instrs[0].xory, instrs[0].pos);
         Advent.AssertAnswer1(coords.Length);
 
-        foreach (var instr in instrs.Skip(0))
-            coords = Fold(coords, instr.xory, instr.pos);
+        foreach (var (xory, pos) in instrs.Skip(0))
+            coords = Fold(coords, xory, pos);
 
         DisplayCharacters(coords);
 
@@ -58,7 +58,7 @@ public class Day13
             .Select(i => new StringBuilder(new string("".PadRight(xMax + 1, ' ').ToArray())))
             .ToArray();
         foreach (var (y, x) in coords)
-            array[y][x] = '*';
+            array[y][x] = '#';
         output.WriteLine(string.Join('\n', array.Select(sb => sb.ToString())));
     }
 }

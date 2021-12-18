@@ -9,14 +9,12 @@ public class Day17
     {
         var input = Advent.ReadInput();
         var m = Regex.Match(input, @"target area: x=(\d+)\.\.(\d+), y=(-\d+)..(-\d+)");
-        var ints = m.Groups.Cast<Group>().Skip(1).Select(g => int.Parse(g.Value)).ToArray();
         int x0 = int.Parse(m.Groups[1].Value);
         int x1 = int.Parse(m.Groups[2].Value);
         int y0 = int.Parse(m.Groups[3].Value);
         int y1 = int.Parse(m.Groups[4].Value);
 
         int maxy = int.MinValue;
-        int dxWin = 0, dyWin = 0;
         int win = 0;
         for (int dx = 1; dx <= x1; dx++)
         {
@@ -24,9 +22,10 @@ public class Day17
             {
                 var (hit, isOvershoot, turnMaxY) = Try(dy, dx);
                 if (hit)
+                {
                     win++;
-                if (hit && turnMaxY > maxy)
-                    (maxy, dxWin, dyWin) = (turnMaxY, dx, dy);
+                    maxy = Math.Max(turnMaxY, maxy);
+                }
                 if (isOvershoot)
                     break;
             }
@@ -49,7 +48,7 @@ public class Day17
                     return (true, false, maxY);
 
                 dx = Math.Max(0, dx - 1);
-                dy = dy - 1;
+                dy--;
             }
             return (false, x > x1, maxY);
         }
