@@ -1,6 +1,3 @@
-using System.Numerics;
-using System.Reflection;
-
 namespace AdventOfCode2021;
 
 public class Day19
@@ -13,29 +10,108 @@ public class Day19
             .Select(ParseCoords)
             .ToArray();
 
-        var beacons = scannerRows[0];
-        var toFind = Enumerable.Range(1, scannerRows.Length - 1).ToList();
+        var identifiers = scannerRows.Select(CreateIdentities).ToArray();
+        var beacons = identifiers[0];
+        var toFind = identifiers.Skip(1).ToHashSet();
         var scannerOffsets = new List<Vector3> { new Vector3(0, 0, 0) };
+
         while (toFind.Any())
         {
-            foreach (int srb in toFind.ToArray())
+            foreach (var idb in toFind.ToArray())
             {
-                var result = FindSolution(beacons.ToArray(), scannerRows[srb]);
+                var result = FindSolution(beacons, idb);
                 if (result != null)
                 {
-                    beacons = beacons.Concat(
-                        scannerRows[srb].Select(v => v.Flip(result.Value.flip) + result.Value.offset)
-                        ).Distinct().ToArray();
+                    foreach (var item in idb)
+                        beacons[item.Key] = new VectorOffset(
+                            item.Value.Vector.Flip(result.Value.flip) + result.Value.offset,
+                            item.Value.Offset.Flip(result.Value.flip));
+
                     scannerOffsets.Add(result.Value.offset);
-                    toFind.Remove(srb);
+                    toFind.Remove(idb);
                 }
             }
         }
-
-        Advent.AssertAnswer1(beacons.Length);
+        var answer1 = beacons.Select(b => b.Value.Vector).Distinct().Count();
+        Advent.AssertAnswer1(answer1);
 
         int maxDistance = MaxManhatanDistance(scannerOffsets);
         Advent.AssertAnswer2(maxDistance);
+    }
+
+    private static (int flip, Vector3 offset)? FindSolution(Dictionary<Identifier, VectorOffset> ida, Dictionary<Identifier, VectorOffset> idb)
+    {
+        var solutions = new List<(int flip, Vector3 offset)>();
+
+        foreach (var identifier in ida.Keys)
+        {
+            if (!idb.TryGetValue(identifier, out var kv))
+                continue;
+
+            var (va, oa) = ida[identifier];
+            var (vb, ob) = kv;
+
+            var flip = FindFlip(oa, ob);
+            if (flip != null)
+                solutions.Add((flip.Value, offset: va - vb.Flip(flip.Value)));
+        }
+        return solutions
+            .GroupBy(s => s)
+            .OrderBy(g => g.Count())
+            .FirstOrDefault(g => g.Count() >= 6)?.Key;
+    }
+    private static int? FindFlip(Vector3 v1, Vector3 v2)
+    {
+        for (int i = 0; i < 24; i++)
+            if (v1 == v2.Flip(i))
+                return i;
+        return null;
+    }
+
+    private Dictionary<Identifier, VectorOffset> CreateIdentities(Vector3[] vectors)
+    {
+        var lengthsForVertors = new List<(int length, int i1, int i2)>();
+
+        for (int i1 = 0; i1 < vectors.Length - 1; i1++)
+            for (int i2 = i1 + 1; i2 < vectors.Length; i2++)
+                lengthsForVertors.Add(((vectors[i1] - vectors[i2]).Length(), i1, i2));
+        lengthsForVertors = lengthsForVertors.OrderBy(i => i.length).ToList();
+
+        var identifiers = new List<(Identifier identifier, VectorOffset vectorOffset)>[vectors.Length];
+        int maxLength = lengthsForVertors[^1].length / 3; // Don't use vectors that are far from each other
+        foreach (var (length, i1, i2) in lengthsForVertors.Where(v => v.length < maxLength))
+        {
+            // The whole array must have a value, or beacons will be missing
+            if (identifiers[i1] == null)
+            {
+                identifiers[i1] = new();
+                identifiers[i1].Add((new Identifier(length, CreateIdentier(vectors[i1] - vectors[i2])), new VectorOffset(vectors[i1], vectors[i1] - vectors[i2])));
+            }
+            else
+            {
+                if (identifiers[i2] == null)
+                    identifiers[i2] = new();
+                identifiers[i2].Add((new Identifier(length, CreateIdentier(vectors[i1] - vectors[i2])), new VectorOffset(vectors[i2], vectors[i2] - vectors[i1])));
+            }
+        }
+        return identifiers.SelectMany(l => l).ToDictionary(i => i.identifier, i => i.vectorOffset);
+    }
+
+    private static Vector3 CreateIdentier(Vector3 v)
+    {
+        Vector3 good = null;
+        Vector3 perfect = null;
+        for (int i = 0; i < 24; i++)
+        {
+            var rot = v.Flip(i);
+            if (rot.X >= 0 && rot.Y >= 0 && rot.Z >= 0 && rot.X <= rot.Y)
+            {
+                good = rot;
+                if (rot.Y <= rot.Z)
+                    perfect = rot;
+            }
+        }
+        return perfect ?? good;
     }
 
     private static int MaxManhatanDistance(List<Vector3> scannerOffsets)
@@ -44,58 +120,10 @@ public class Day19
         for (int i = 0; i < scannerOffsets.Count - 1; i++)
         {
             for (int j = 1; j < scannerOffsets.Count; j++)
-                maxDistance = Math.Max(maxDistance, scannerOffsets[i].ManhattanDistance(scannerOffsets[j]));
+                maxDistance = Math.Max(maxDistance, (scannerOffsets[i] - scannerOffsets[j]).ManhattanDistance());
         }
 
         return maxDistance;
-    }
-
-    private static (int flip, Vector3 offset)? FindSolution(Vector3[] sra, Vector3[] srb)
-    {
-
-        for (int a1 = 0; a1 < sra.Length; a1++)
-        {
-            var solutions = new List<(int flip, Vector3 offset)>();
-
-            for (int a2 = 0; a2 < sra.Length; a2++)
-            {
-                if (a1 == a2) continue;
-
-                Vector3 a = sra[a1] - sra[a2];
-                float aLength = a.Length();
-                for (int b1 = 0; b1 < srb.Length - 1; b1++)
-                {
-                    for (int b2 = b1 + 1; b2 < srb.Length; b2++)
-                    {
-                        Vector3 b = srb[b1] - srb[b2];
-                        float bLength = b.Length();
-                        if (Math.Abs(aLength - bLength) < 0.00001)
-                        {
-                            bool found = false;
-                            for (int flip = 0; flip < 24; flip++)
-                            {
-                                if ((a - b.Flip(flip)).Length() < 0.00001)
-                                {
-                                    var offset = sra[a1] - srb[b1].Flip(flip);
-                                    solutions.Add((flip, offset));
-                                    var test1 = srb[b1].Flip(flip) + offset;
-                                    var test2 = srb[b2].Flip(flip) + offset;
-                                    found = true;
-                                    break;
-                                }
-                            }
-                            if (!found)
-                                1.ToString();
-                        }
-                    }
-                }
-
-            }
-            var result = solutions.GroupBy(s => s).Where(g => g.Count() > 4).FirstOrDefault()?.Key;
-            if (result != null)
-                return result;
-        }
-        return null;
     }
 
     private Vector3[] ParseCoords(string scannerLines)
@@ -107,40 +135,47 @@ public class Day19
             .Select(nums => new Vector3(nums[0], nums[1], nums[2]))
             .ToArray();
     }
-}
 
-public static class Vector3Extensions
-{
-    public static int ManhattanDistance(this Vector3 vector1, Vector3 vector2)
-        => (int)Math.Round(Math.Abs(vector1.X - vector2.X) + Math.Abs(vector1.Y - vector2.Y) + Math.Abs(vector1.Z - vector2.Z), 0);
-    public static Vector3 Flip(this Vector3 v, int flip)
+    record Identifier(int Length, Vector3 Vector);
+    record VectorOffset(Vector3 Vector, Vector3 Offset);
+
+    public record Vector3(int X, int Y, int Z)
     {
-        return flip switch
+        public int Length() => X * X + Y * Y + Z * Z;
+        public int ManhattanDistance() => Math.Abs(X) + Math.Abs(Y) + Math.Abs(Z);
+
+        public static Vector3 operator -(Vector3 a, Vector3 b) => new Vector3(a.X - b.X, a.Y - b.Y, a.Z - b.Z);
+        public static Vector3 operator +(Vector3 a, Vector3 b) => new Vector3(a.X + b.X, a.Y + b.Y, a.Z + b.Z);
+
+        public Vector3 Flip(int flip)
         {
-            0 => new Vector3(v.X, v.Y, v.Z),
-            1 => new Vector3(v.Y, -v.X, v.Z),
-            2 => new Vector3(-v.X, -v.Y, v.Z),
-            3 => new Vector3(-v.Y, v.X, v.Z),
-            4 => new Vector3(v.X, -v.Y, -v.Z),
-            5 => new Vector3(-v.Y, -v.X, -v.Z),
-            6 => new Vector3(-v.X, v.Y, -v.Z),
-            7 => new Vector3(v.Y, v.X, -v.Z),
-            8 => new Vector3(v.Z, v.Y, -v.X),
-            9 => new Vector3(v.Y, -v.Z, -v.X),
-            10 => new Vector3(-v.Z, -v.Y, -v.X),
-            11 => new Vector3(-v.Y, v.Z, -v.X),
-            12 => new Vector3(v.Z, -v.Y, v.X),
-            13 => new Vector3(-v.Y, -v.Z, v.X),
-            14 => new Vector3(-v.Z, v.Y, v.X),
-            15 => new Vector3(v.Y, v.Z, v.X),
-            16 => new Vector3(v.X, -v.Z, v.Y),
-            17 => new Vector3(-v.Z, -v.X, v.Y),
-            18 => new Vector3(-v.X, v.Z, v.Y),
-            19 => new Vector3(v.Z, v.X, v.Y),
-            20 => new Vector3(v.X, v.Z, -v.Y),
-            21 => new Vector3(v.Z, -v.X, -v.Y),
-            22 => new Vector3(-v.X, -v.Z, -v.Y),
-            23 => new Vector3(-v.Z, v.X, -v.Y),
-        };
+            return flip switch
+            {
+                0 => new Vector3(X, Y, Z),
+                1 => new Vector3(Y, -X, Z),
+                2 => new Vector3(-X, -Y, Z),
+                3 => new Vector3(-Y, X, Z),
+                4 => new Vector3(X, -Y, -Z),
+                5 => new Vector3(-Y, -X, -Z),
+                6 => new Vector3(-X, Y, -Z),
+                7 => new Vector3(Y, X, -Z),
+                8 => new Vector3(Z, Y, -X),
+                9 => new Vector3(Y, -Z, -X),
+                10 => new Vector3(-Z, -Y, -X),
+                11 => new Vector3(-Y, Z, -X),
+                12 => new Vector3(Z, -Y, X),
+                13 => new Vector3(-Y, -Z, X),
+                14 => new Vector3(-Z, Y, X),
+                15 => new Vector3(Y, Z, X),
+                16 => new Vector3(X, -Z, Y),
+                17 => new Vector3(-Z, -X, Y),
+                18 => new Vector3(-X, Z, Y),
+                19 => new Vector3(Z, X, Y),
+                20 => new Vector3(X, Z, -Y),
+                21 => new Vector3(Z, -X, -Y),
+                22 => new Vector3(-X, -Z, -Y),
+                23 => new Vector3(-Z, X, -Y),
+            };
+        }
     }
 }
