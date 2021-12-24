@@ -1,3 +1,5 @@
+using System.Security.Cryptography.X509Certificates;
+
 namespace AdventOfCode2021;
 
 public class Day24
@@ -24,10 +26,71 @@ public class Day24
             code[^1].Add(instr);
         }
 
+        string serial = "";
+        (int z, int digit) = Find(13, 0);
+        output.WriteLine($"{z} {digit}"); 
+
+        (int z, int digit) Find(int codeIndex, int resultToFind)
+        {
+            for (int digit = 9; digit >= 0; digit--)
+            {
+                for (int z = 0; z < 1_000_000; z++)
+                {
+                    if (Execute(code[codeIndex], digit, z) == resultToFind)
+                        return (z, digit);
+                }
+            }
+            throw new Exception("huh?");
+        }
+        return;
+
+#if false
+        var possibleInputs = new Dictionary<int, List<(int digit, int zin)>>();
+        possibleInputs.Add(0, null);
+        var inToOut = new Dictionary<int, List<(int digit, int zin)>>[code.Count];
+        for (int codeIndex = 0; codeIndex < code.Count; codeIndex++)
+        {
+            var outputs = new Dictionary<int, List<(int digit, int zin)>>();
+            foreach (int possibleInput in possibleInputs.Keys)
+                for (int digit = 1; digit <= 9; digit++)
+                {
+                    int result = Execute(code[codeIndex], digit, possibleInput);
+                    if (result < 1000000)
+                    {
+                        if(outputs.TryGetValue(result, out var list))
+                            list.Add((digit, possibleInput));
+                        else
+                            outputs.Add(result, new List<(int digit, int zin)> { (digit, possibleInput) });
+                    }
+                }
+            possibleInputs = outputs;
+            inToOut[codeIndex] = outputs;
+        }
+
+        var r = new Dictionary<int, (string serialMin, string serialMax)>();
+        r[0] = ("", "");
+        for (int codeIndex = code.Count - 1; codeIndex >= 0; codeIndex--)
+        {
+            r = GetPossibleZ2(r, codeIndex);
+        }
+        1.ToString();
+
+        Dictionary<int, (string serialMin, string serialMax)> GetPossibleZ2(Dictionary<int, (string serialMin, string serialMax)> possibleOutputs, int codeIndex)
+        {
+            return possibleOutputs
+                .SelectMany(
+                    a => inToOut[codeIndex][a.Key],
+                    (s, c) => (serialMin: c.digit + s.Value.serialMin, serialMax: c.digit + s.Value.serialMax, c.zin))
+                .GroupBy(g => g.zin)
+                .ToDictionary(g => g.Key, g => (g.Min(s => s.Item1), g.Max(s => s.serialMax)));
+        }
+#else
+
         var r = new Dictionary<int, (string serialMin, string serialMax)>();
         r[0] = ("", "");
         for (int codeIndex = code.Count - 1; codeIndex >= 0; codeIndex--)
             r = GetPossibleZ(r, codeIndex);
+#endif
         Advent.AssertAnswer1(r.Values.Min(s => s.serialMax));
         Advent.AssertAnswer2(r.Values.Min(s => s.serialMin));
 
