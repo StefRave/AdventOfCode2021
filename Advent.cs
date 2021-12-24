@@ -24,7 +24,7 @@ public class Advent
             throw new Exception($"Number not found in test {callerFilePath}");
         string number = match.Groups[1].Value;
 
-#if true || !DEBUGSAMPLE
+#if DEBUGSAMPLE
         return @$"input\input{number} sample.txt";
 #else
         return @$"input\input{number}.txt";
