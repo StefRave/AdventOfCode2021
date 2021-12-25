@@ -2,71 +2,63 @@ namespace AdventOfCode2021;
 
 public class Day25
 {
+    private readonly ITestOutputHelper output;
+
+    public Day25(ITestOutputHelper output)
+    {
+        this.output = output;
+    }
     [Fact]
     public void Run()
     {
-        char[][] input = Advent.ReadInputLines()
-            .Select(line => line.ToArray())
-            .ToArray();
+        var input = Advent.ReadInputLines();
+        Dictionary<(int y, int x), char> dict = input
+            .Select((line, y) => line.Select((c, x) => (x, y, c)))
+            .SelectMany(l => l)
+            .Where(l => l.c != '.')
+            .ToDictionary(kv => (kv.y, kv.x), kv => kv.c);
         int maxY = input.Length;
         int maxX = input[0].Length;
-
+        
         int step = 0;
-        var map = input;
-        while (true)
+        Print();
+        
+        while(step++ < 1000)
         {
-            char[][] newMap = new char[maxY][];
-
-            for (int y = 0; y < maxY; y++)
-                newMap[y] = "".PadRight(maxX, '.').ToCharArray();
-
-            bool moved = false;
-            // the east-facing herd moves first
-            for (int y = 0; y < maxY; y++)
-            {
-                for (int x = 0; x < maxX; x++)
-                {
-                    if (map[y][x] == '>')
-                    {
-                        if (map[y][(x + 1) % maxX] != '.')
-                            newMap[y][x] = '>';
-                        else
-                        {
-                            moved = true;
-                            newMap[y][(x + 1) % maxX] = '>';
-                        }
-                    }
-                    else if (map[y][x] == 'v')
-                        newMap[y][x] = 'v';
-                }
-            }
-            map = newMap;
-            newMap = new char[maxY][];
-            for (int y = 0; y < maxY; y++)
-                newMap[y] = "".PadRight(maxX, '.').ToCharArray();
-            for (int y = 0; y < maxY; y++)
-            {
-                for (int x = 0; x < maxX; x++)
-                {
-                    if (map[y][x] == 'v')
-                    {
-                        if (map[(y + 1) % maxY][x] != '.')
-                            newMap[y][x] = 'v';
-                        else
-                        {
-                            moved = true;
-                            newMap[(y + 1) % maxY][x] = 'v';
-                        }
-                    }
-                    else if (map[y][x] == '>')
-                        newMap[y][x] = map[y][x];
-                }
-            }
-            map = newMap;
-            step++;
-            if (!moved)
+            (dict, bool hasChangeX) = Move(dict, '>', yx => (yx.y, (yx.x + 1) % maxX));
+            (dict, bool hasChangeY) = Move(dict, 'v', yx => ((yx.y + 1) % maxY, yx.x));
+            if (!hasChangeX && !hasChangeY)
                 break;
         }
+        Print();
         Advent.AssertAnswer1(step);
+
+
+        static (Dictionary<(int y, int x), char>, bool hasChanged) Move(Dictionary<(int y, int x), char> dict, char cType, Func<(int y, int x), (int y, int x)> movement)
+        {
+            var oldDict = dict;
+            dict = new();
+            bool hasChanged = false;
+            foreach (var (yx, c) in oldDict)
+            {
+                var yxNew = movement(yx);
+                bool canMove = c == cType && !oldDict.ContainsKey(yxNew);
+                dict[canMove ? yxNew : yx] = c;
+                hasChanged = hasChanged || canMove;
+            }
+            return (dict, hasChanged);
+        }
+
+        void Print()
+        {
+            output.WriteLine($"\nStep {step}");
+            for (int y = 0; y < maxY; y++)
+            {
+                string line = "";
+                for (int x = 0; x < maxX; x++)
+                    line += dict.ContainsKey((y, x)) ? dict[(y, x)] : '.';
+                output.WriteLine(line);
+            }
+        }
     }
 }
