@@ -2,22 +2,71 @@ namespace AdventOfCode2021;
 
 public class Day25
 {
-    private readonly ITestOutputHelper output;
-
-    public Day25(ITestOutputHelper output)
-    {
-        this.output = output;
-    }
-
     [Fact]
     public void Run()
     {
-        var input = Advent.ReadInputLines()
-            .Select(c => int.Parse(c))
+        char[][] input = Advent.ReadInputLines()
+            .Select(line => line.ToArray())
             .ToArray();
+        int maxY = input.Length;
+        int maxX = input[0].Length;
 
-        Advent.AssertAnswer1("answer1");
+        int step = 0;
+        var map = input;
+        while (true)
+        {
+            char[][] newMap = new char[maxY][];
 
-        Advent.AssertAnswer2(2);
+            for (int y = 0; y < maxY; y++)
+                newMap[y] = "".PadRight(maxX, '.').ToCharArray();
+
+            bool moved = false;
+            // the east-facing herd moves first
+            for (int y = 0; y < maxY; y++)
+            {
+                for (int x = 0; x < maxX; x++)
+                {
+                    if (map[y][x] == '>')
+                    {
+                        if (map[y][(x + 1) % maxX] != '.')
+                            newMap[y][x] = '>';
+                        else
+                        {
+                            moved = true;
+                            newMap[y][(x + 1) % maxX] = '>';
+                        }
+                    }
+                    else if (map[y][x] == 'v')
+                        newMap[y][x] = 'v';
+                }
+            }
+            map = newMap;
+            newMap = new char[maxY][];
+            for (int y = 0; y < maxY; y++)
+                newMap[y] = "".PadRight(maxX, '.').ToCharArray();
+            for (int y = 0; y < maxY; y++)
+            {
+                for (int x = 0; x < maxX; x++)
+                {
+                    if (map[y][x] == 'v')
+                    {
+                        if (map[(y + 1) % maxY][x] != '.')
+                            newMap[y][x] = 'v';
+                        else
+                        {
+                            moved = true;
+                            newMap[(y + 1) % maxY][x] = 'v';
+                        }
+                    }
+                    else if (map[y][x] == '>')
+                        newMap[y][x] = map[y][x];
+                }
+            }
+            map = newMap;
+            step++;
+            if (!moved)
+                break;
+        }
+        Advent.AssertAnswer1(step);
     }
 }
