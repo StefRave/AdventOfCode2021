@@ -58,7 +58,7 @@ public class Advent
         return timeSpan.Ticks switch
         {
             < TimeSpan.TicksPerMinute => timeSpan.ToString(@"s\.fff"),
-            _ => timeSpan.ToString("HH:mm:ss"),
+            _ => timeSpan.ToString(@"hh\:mm\:ss"),
         };
     }
     private static Type GetAdventSoltion()
