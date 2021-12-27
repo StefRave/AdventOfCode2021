@@ -4,14 +4,8 @@ using System.Text.RegularExpressions;
 
 namespace AdventOfCode2021;
 
-public class Day23
+public class Day23 : IAdvent
 {
-    private readonly ITestOutputHelper output;
-    public Day23(ITestOutputHelper output)
-    {
-        this.output = output;
-    }
-
     private string[] space = Array.Empty<string>();
 
     [Fact]
@@ -178,7 +172,7 @@ public class Day23
 
     private void Draw(State state, int moveCount)
     {
-        output.WriteLine($"Move: {moveCount}");
+        Console.WriteLine($"Move: {moveCount}");
         for (int y = 0; y < space.Length; y++)
         {
             var sb = new StringBuilder(space[y]);
@@ -191,7 +185,7 @@ public class Day23
             foreach (Amphi amphi in amphis)
                 if (amphi.Y == y)
                     sb[amphi.X] = amphi.Type;
-            output.WriteLine(sb.ToString());
+            Console.WriteLine(sb.ToString());
         }
     }
 }

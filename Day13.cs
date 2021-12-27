@@ -3,15 +3,8 @@ using System.Text.RegularExpressions;
 
 namespace AdventOfCode2021;
 
-public class Day13
+public class Day13 : IAdvent
 {
-    private readonly ITestOutputHelper output;
-
-    public Day13(ITestOutputHelper output)
-    {
-        this.output = output;
-    }
-
     [Fact]
     public void Run()
     {
@@ -59,6 +52,6 @@ public class Day13
             .ToArray();
         foreach (var (y, x) in coords)
             array[y][x] = '#';
-        output.WriteLine(string.Join('\n', array.Select(sb => sb.ToString())));
+        Console.WriteLine(string.Join('\n', array.Select(sb => sb.ToString())));
     }
 }

@@ -1,6 +1,6 @@
 namespace AdventOfCode2021;
 
-public class Day14
+public class Day14 : IAdvent
 {
     [Fact]
     public void Run()

@@ -1,15 +1,7 @@
-using System.Security.Cryptography.X509Certificates;
-
 namespace AdventOfCode2021;
 
-public class Day24
+public class Day24 : IAdvent
 {
-    private readonly ITestOutputHelper output;
-
-    public Day24(ITestOutputHelper output)
-    {
-        this.output = output;
-    }
     [Fact]
     public void Run()
     {
@@ -25,24 +17,6 @@ public class Day24
             var instr = Instr.Parse(line);
             code[^1].Add(instr);
         }
-
-        string serial = "";
-        (int z, int digit) = Find(13, 0);
-        output.WriteLine($"{z} {digit}"); 
-
-        (int z, int digit) Find(int codeIndex, int resultToFind)
-        {
-            for (int digit = 9; digit >= 0; digit--)
-            {
-                for (int z = 0; z < 1_000_000; z++)
-                {
-                    if (Execute(code[codeIndex], digit, z) == resultToFind)
-                        return (z, digit);
-                }
-            }
-            throw new Exception("huh?");
-        }
-        return;
 
 #if false
         var possibleInputs = new Dictionary<int, List<(int digit, int zin)>>();
@@ -86,8 +60,7 @@ public class Day24
         }
 #else
 
-        var r = new Dictionary<int, (string serialMin, string serialMax)>();
-        r[0] = ("", "");
+        var r = new Dictionary<int, (string serialMin, string serialMax)>() { [0] = ("", "") };
         for (int codeIndex = code.Count - 1; codeIndex >= 0; codeIndex--)
             r = GetPossibleZ(r, codeIndex);
 #endif
@@ -143,7 +116,7 @@ public class Day24
         }
     }
 
-    private int Execute(IList<Instr> code, int digit, int z)
+    private static int Execute(IList<Instr> code, int digit, int z)
     {
         int x = 0, y = 0, w = 0;
 

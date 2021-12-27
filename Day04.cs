@@ -1,14 +1,7 @@
 namespace AdventOfCode2021;
 
-public class Day04
+public class Day04 : IAdvent
 {
-    private readonly ITestOutputHelper output;
-
-    public Day04(ITestOutputHelper output)
-    {
-        this.output = output;
-    }
-
     [Fact]
     public void Run()
     {

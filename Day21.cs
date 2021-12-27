@@ -1,6 +1,6 @@
 namespace AdventOfCode2021;
 
-public class Day21
+public class Day21 : IAdvent
 {
     private static readonly int[] occurencesFor3Rolls = new int[] { 0, 0, 0, 1, 3, 6, 7, 6, 3, 1 };
 

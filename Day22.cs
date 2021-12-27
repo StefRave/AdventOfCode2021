@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace AdventOfCode2021;
 
-public class Day22
+public class Day22 : IAdvent
 {
     [Fact]
     public void Run()

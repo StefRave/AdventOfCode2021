@@ -1,14 +1,7 @@
 namespace AdventOfCode2021;
 
-public class Day08Alt
+public class Day08Alt : IAdvent
 {
-    private readonly ITestOutputHelper output;
-
-    public Day08Alt(ITestOutputHelper output)
-    {
-        this.output = output;
-    }
-
     string DigitsInput = @"
   0:      1:      2:      3:      4:
  aaaa    ....    aaaa    aaaa    ....

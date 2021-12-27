@@ -1,48 +1,126 @@
-﻿using System.Globalization;
-using System.Runtime.CompilerServices;
+﻿using System.Diagnostics;
+using System.Globalization;
+using System.Reflection;
 using System.Text.RegularExpressions;
-using Xunit;
+using CommandLine;
+using FluentAssertions;
 
 namespace AdventOfCode2021;
 
+public class Options
+{
+    [Option('d', "day", Required = true, HelpText = "The day to run")]
+    public string Day { get; set; }
+
+    [Option('s', "sample", Required = false, HelpText = "Run using the sample data")]
+    public bool Sample { get; set; }
+
+}
+
 public class Advent
 {
-    public static string[] ReadInputLines([CallerFilePath] string callerFilePath = null)
+    public static string Day;
+    public static bool UseSampleData;
+
+    public static void Main(string[] args)
     {
-        return File.ReadAllLines(GetInputName(callerFilePath));
+        Parser.Default.ParseArguments<Options>(args)
+            .MapResult(o =>
+            {
+                Day = o.Day.PadLeft(2, '0'); // ensure leading 0
+                UseSampleData = o.Sample;
+
+                Type type = GetAdventSoltion();
+                if (type == null)
+                {
+                    Console.WriteLine($"Day {o.Day} not found");
+                    return 10;
+                }
+                Console.WriteLine($"Running {type.Name}");
+                var adv = (IAdvent)Activator.CreateInstance(type);
+                var stopWatch = Stopwatch.StartNew();
+                try
+                {
+                    adv.Run();
+                }
+                catch (FailedToAnswerCorrectlyExcaption) { }
+                stopWatch.Stop();
+                Console.WriteLine("Elapsed: " + TimeToString(stopWatch.Elapsed));
+                return 0;
+            }, errs =>
+            {
+                return -1;
+            });
     }
 
-    public static string ReadInput([CallerFilePath] string callerFilePath = null)
+    private static string TimeToString(TimeSpan timeSpan)
     {
-        return File.ReadAllText(GetInputName(callerFilePath));
+        return timeSpan.Ticks switch
+        {
+            < TimeSpan.TicksPerMinute => timeSpan.ToString(@"s\.fff"),
+            _ => timeSpan.ToString("HH:mm:ss"),
+        };
+    }
+    private static Type GetAdventSoltion()
+    {
+        IEnumerable<Type> enumerable = Assembly.GetExecutingAssembly().GetTypes().ThatImplement<IAdvent>();
+        var type = enumerable.FirstOrDefault(t => Regex.Match(t.Name, @"\d+[a-z]*$", RegexOptions.IgnoreCase).Value.TrimStart('0') == Day.TrimStart('0'));
+        return type;
     }
 
-    private static string GetInputName(string callerFilePath)
+    public static string[] ReadInputLines()
     {
-        var match = Regex.Match(callerFilePath, @"(\d+)\D*\.cs");
-        if (!match.Success)
-            throw new Exception($"Number not found in test {callerFilePath}");
-        string number = match.Groups[1].Value;
-
-#if DEBUGSAMPLE
-        return @$"input\input{number} sample.txt";
-#else
-        return @$"input\input{number}.txt";
-#endif
+        return File.ReadAllLines(GetInputName());
     }
 
-    private static string ReadResult(int answer1or2, string callerFilePath)
+    public static string ReadInput()
     {
-        return File.ReadAllLines(GetInputName(callerFilePath).Replace(".txt", ".answer.txt"))[answer1or2 - 1];
+        return File.ReadAllText(GetInputName());
     }
 
-    public static void AssertAnswer1(object result, [CallerFilePath] string callerFilePath = null)
+    private static string GetInputName()
     {
-        Assert.Equal(ReadResult(1, callerFilePath), Convert.ToString(result, CultureInfo.InvariantCulture));
+        if (UseSampleData)
+            return @$"input\input{Day[0..2]} sample.txt";
+        else
+            return @$"input\input{Day[0..2]}.txt";
     }
 
-    public static void AssertAnswer2(object result, [CallerFilePath] string callerFilePath = null)
+    private static void AssertAnswer(object result, int partNumber)
     {
-        Assert.Equal(ReadResult(2, callerFilePath), Convert.ToString(result, CultureInfo.InvariantCulture));
+        string actualString = Convert.ToString(result, CultureInfo.InvariantCulture);
+        string expectedString = File.ReadAllLines(GetInputName().Replace(".txt", ".answer.txt"))[partNumber - 1];
+        bool correct = actualString == expectedString;
+
+        Console.Write("");
+        var fg = Console.ForegroundColor;
+        if (correct)
+        {
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine($"Answer day {Day} part {partNumber}: {actualString}");
+        }
+        else
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine($"Answer day {Day} part {partNumber}: {actualString}  correct answer: {expectedString}");
+        }
+        Console.ForegroundColor = fg;
+        if (!correct)
+            throw new FailedToAnswerCorrectlyExcaption();
     }
+
+    public static void AssertAnswer1(object result)
+        => AssertAnswer(result, 1);
+
+    public static void AssertAnswer2(object result)
+        => AssertAnswer(result, 2);
+}
+
+public interface IAdvent
+{
+    void Run();
+}
+public class FailedToAnswerCorrectlyExcaption : Exception
+{
+
 }

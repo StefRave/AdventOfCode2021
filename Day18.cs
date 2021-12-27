@@ -2,15 +2,8 @@ using System.Text;
 
 namespace AdventOfCode2021;
 
-public class Day18
+public class Day18 : IAdvent
 {
-    private readonly ITestOutputHelper output;
-
-    public Day18(ITestOutputHelper output)
-    {
-        this.output = output;
-    }
-
     [Fact]
     public void Run()
     {
@@ -116,7 +109,7 @@ public class Day18
                 level--;
             }
         }
-        output.WriteLine(sb.ToString());
+        Console.WriteLine(sb.ToString());
     }
 
     private static List<NumLevel> Parse(string line)

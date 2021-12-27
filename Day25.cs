@@ -1,13 +1,7 @@
 namespace AdventOfCode2021;
 
-public class Day25
+public class Day25 : IAdvent
 {
-    private readonly ITestOutputHelper output;
-
-    public Day25(ITestOutputHelper output)
-    {
-        this.output = output;
-    }
     [Fact]
     public void Run()
     {
@@ -51,13 +45,13 @@ public class Day25
 
         void Print()
         {
-            output.WriteLine($"\nStep {step}");
+            Console.WriteLine($"\nStep {step}");
             for (int y = 0; y < maxY; y++)
             {
                 string line = "";
                 for (int x = 0; x < maxX; x++)
                     line += dict.ContainsKey((y, x)) ? dict[(y, x)] : '.';
-                output.WriteLine(line);
+                Console.WriteLine(line);
             }
         }
     }

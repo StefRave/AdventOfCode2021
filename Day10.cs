@@ -1,6 +1,6 @@
 namespace AdventOfCode2021;
 
-public class Day10
+public class Day10 : IAdvent
 {
     private static int ScoreCorrupted(char c) => c switch { ')' => 3, ']' => 57, '}' => 1197, '>' => 25137};
     private static int ScoreClose(char c) => c switch { ')' => 1, ']' => 2, '}' => 3, '>' => 4 };
