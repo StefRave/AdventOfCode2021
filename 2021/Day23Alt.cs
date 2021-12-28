@@ -29,7 +29,7 @@ public class Day23Alt : IAdvent
         int? score = Try(state, null);
 
         int move = 0;
-        while(true)
+        while (true)
         {
             Draw(state, ++move);
 
@@ -52,7 +52,6 @@ public class Day23Alt : IAdvent
 
             if (dict.TryGetValue(state, out var scoreState))
                 return scoreState.score;
-            //Draw(state, 0);
 
             string oldState = state;
             int? bestScore = null;
@@ -158,7 +157,7 @@ public class Day23Alt : IAdvent
     public static (string state, int energy) MoveToHall(string state, int posInRoom, int posInHall)
     {
         int depthInRoom = (posInRoom - hallWidth) / rooms + 1;
-        int hallPos = (posInRoom - hallWidth) % rooms + 2;
+        int hallPos = ((posInRoom - hallWidth) % rooms) * 2 + 2;
         return (SwapRoomAndHall(state, posInHall, posInRoom), (Math.Abs(posInHall - hallPos) + depthInRoom) * MoveEnergy(state[posInRoom]));
     }
 
@@ -181,7 +180,7 @@ public class Day23Alt : IAdvent
             if (state[x] != '.')
                 return (null, 0);
 
-        int storeDepth = (storePos.Value - hallWidth) / rooms + 2;
+        int storeDepth = (storePos.Value - hallWidth) / rooms + 1;
         distance += storeDepth + amphiDepth;
         return (SwapRoomAndHall(state, amphiPos, storePos.Value), distance * MoveEnergy(type));
     }
