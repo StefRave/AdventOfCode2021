@@ -18,132 +18,162 @@ public class Day23 : IAdvent
         Advent.AssertAnswer2(DoIt(input));
     }
 
-    long DoIt(string[] input)
+    int? DoIt(string[] input)
     {
         space = input.Select(line => Regex.Replace(line, "[ABCD]", ".")).ToArray();
 
-        var amphisWaiting = new List<Amphi>().ToImmutableList();
+        var rooms = new List<Amphi>().ToImmutableList();
         for (int y = 0; y < input.Length; y++)
             for (int x = 0; x < input[y].Length; x++)
                 if (char.IsLetter(input[y][x]))
-                    amphisWaiting = amphisWaiting.Add(new Amphi(input[y][x], y, x));
+                    rooms = rooms.Add(new Amphi(input[y][x], y, x));
 
-        var amphisReady = ImmutableList<Amphi>.Empty;
-        foreach (var amphi in amphisWaiting.ToArray())
-            if (amphi.X == State.GetDestinationX(amphi.Type) && amphi.Y == input.Length - 2)
-                (amphisReady, amphisWaiting) = (amphisReady.Add(amphi), amphisWaiting.Remove(amphi));
-
-        var state = new State(amphisWaiting, amphisReady, ImmutableHashSet<Amphi>.Empty);
-
+        var state = new State(rooms, ImmutableSortedSet<Amphi>.Empty);
         int depth = input.Length - 3;
-        int moveCount = 0;
-        long score = Try(state);
+        var dict = new Dictionary<State, (int? score, State? bestNextState)>();
+
+        int? score = Try(state, null);
+
+        int move = 0;
+        while(true)
+        {
+            Draw(state, ++move);
+
+            if (!dict.TryGetValue(state, out var nextState))
+                break;
+            state = nextState.bestNextState;
+            if (state == null)
+                break;
+        }
         return score;
     
 
-        long Try(State state)
+        int? Try(State state, char? focussedOnHall)
         {
-            if (++moveCount == 1)
-                Draw(state, moveCount);
-            long minScore = int.MaxValue;
+            if (state.Hall.Count == 0)
+            {
+                if (state.AllRoomsInOrder())
+                    return 0;
+            }
 
-            int energy = 0;
+            if (dict.TryGetValue(state, out var scoreState))
+                return scoreState.score;
+
+            State oldState = state;
+            int? bestScore = null;
+            State? bestNextState = null;
+            bool tried = false;
+
             // try to move from hall to destination room
-            foreach (var amphi in state.InHall)
+            foreach (var amphi in state.Hall)
             {
                 var newAmphi = state.PositionInRoomWhenPathIsFree(amphi, depth: depth);
                 if (newAmphi == null)
                     continue;
-                energy += amphi.MoveEnergyTo(newAmphi);
-                state = state with { InHall = state.InHall.Remove(amphi), AmphisReady = state.AmphisReady.Add(newAmphi) };
+                Do(amphi.MoveEnergyTo(newAmphi), state.MoveFromHallToRoom(amphi, newAmphi), focussedOnHall);
+                break;
             }
-            // try to move from room to destination room
-            foreach (char hallType in "ABCD")
+            if (!tried)
             {
-                while (true)
+                // try to move from room to destination room
+                foreach (char hallType in "ABCD")
                 {
                     Amphi? amphi = state.GetCandidateInRoom(hallType);
                     if (amphi == null)
-                        break;
+                        continue;
                     var newAmphi = state.PositionInRoomWhenPathIsFree(amphi, depth: depth);
                     if (newAmphi == null)
-                        break;
-                    energy += amphi.MoveEnergyTo(newAmphi);
-                    state = state with { WaitingInRoom = state.WaitingInRoom.Remove(amphi), AmphisReady = state.AmphisReady.Add(newAmphi) };
-                }
-            }
-            if (energy > 0)
-                return energy + Try(state);
-
-            if (state.WaitingInRoom.Count == 0)
-            {
-                if (state.InHall.Count > 0)
-                    return int.MaxValue;
-                return 0;
-            }
-            foreach (char hallType in "ABCD")
-            {
-                Amphi? amphi = state.GetCandidateInRoom(hallType);
-                if (amphi == null)
-                    continue;
-                int min = 1;
-                for (int x = State.GetDestinationX(hallType); x >= min; x--)
-                {
-                    bool isBlocked = state.InHall.Any(a => a.X == x);
-                    if (isBlocked)
-                        break;
-                    if (State.IsInFrontOfRoom(x))
                         continue;
-                    var newAmphi = amphi with { X = x, Y = 1 };
-                    Do(amphi.MoveEnergyTo(newAmphi), state with { InHall = state.InHall.Add(newAmphi), WaitingInRoom = state.WaitingInRoom.Remove(amphi) });
-                }
-                for (int x = State.GetDestinationX(hallType); x <= 11; x++)
-                {
-                    bool isBlocked = state.InHall.Any(a => a.X == x);
-                    if (isBlocked)
-                        break;
-                    if (State.IsInFrontOfRoom(x))
-                        continue;
-                    var newAmphi = amphi with { X = x, Y = 1 };
-                    Do(amphi.MoveEnergyTo(newAmphi), state with { InHall = state.InHall.Add(newAmphi), WaitingInRoom = state.WaitingInRoom.Remove(amphi) });
+                    Do(amphi.MoveEnergyTo(newAmphi), state.MoveFromRoomToRoom(amphi, newAmphi), focussedOnHall);
+                    break;
                 }
             }
-            return minScore;
+            if (!tried)
+            {
+                string hallsToTry = "ABCD";
+                if (focussedOnHall != null)
+                    if (state.GetCandidateInRoom(focussedOnHall.Value) == null)
+                        focussedOnHall = null;
+                if (focussedOnHall != null)
+                    hallsToTry = char.ToString(focussedOnHall.Value);
+                foreach (char hallType in hallsToTry)
+                {
+                    Amphi? amphi = state.GetCandidateInRoom(hallType);
+                    if (amphi == null)
+                        continue;
+                    int min = 1;
+                    for (int x = State.GetDestinationX(hallType); x >= min; x--)
+                    {
+                        bool isBlocked = state.Hall.Any(a => a.X == x);
+                        if (isBlocked)
+                            break;
+                        if (State.IsInFrontOfRoom(x))
+                            continue;
+                        var newAmphi = amphi with { X = x, Y = 1 };
+                        Do(amphi.MoveEnergyTo(newAmphi), state.MoveFromRoomToHall(amphi, newAmphi), hallType);
+                    }
+                    for (int x = State.GetDestinationX(hallType); x <= 11; x++)
+                    {
+                        bool isBlocked = state.Hall.Any(a => a.X == x);
+                        if (isBlocked)
+                            break;
+                        if (State.IsInFrontOfRoom(x))
+                            continue;
+                        var newAmphi = amphi with { X = x, Y = 1 };
+                        Do(amphi.MoveEnergyTo(newAmphi), state.MoveFromRoomToHall(amphi, newAmphi), hallType);
+                    }
+                }
+            }
+            dict.Add(oldState, (bestScore, bestNextState));
+            return bestScore;
 
-            void Do(int moveEnergy, State state) => minScore = Math.Min(minScore, moveEnergy + Try(state));
+            int? Do(int moveEnergy, State state, char? focussedOnRoom)
+            {
+                tried = true;
+                int? energy = Try(state, focussedOnRoom);
+                if (energy != null && (bestScore == null || bestScore > (moveEnergy + energy)))
+                {
+                    bestScore = moveEnergy + energy;
+                    bestNextState = state;
+                }
+                return bestScore;
+            }
         } 
     }
 
-    public record State(ImmutableList<Amphi> WaitingInRoom, ImmutableList<Amphi> AmphisReady, ImmutableHashSet<Amphi> InHall)
+    public class State
     {
-        public static int GetDestinationX(char amphiType) => 3 + (amphiType - 'A') * 2;
-
-        public bool IsAtDestination(Amphi amphi)
+        public ImmutableList<Amphi> Rooms { get; }
+        public ImmutableSortedSet<Amphi> Hall { get; }
+        
+        public State(ImmutableList<Amphi> rooms, ImmutableSortedSet<Amphi> hall)
         {
-            if (amphi.X != GetDestinationX(amphi.Type))
-                return false;
-            if (amphi.Y == 1)
-                return false;
-            if (amphi.Y == 3)
-                return true;
-            return AmphisReady.Any(a => a.X == amphi.X && a.Type == amphi.Type);
+            Rooms = rooms;
+            Hall = hall;
         }
+
+        public bool AllRoomsInOrder()
+            => Rooms.All(r => r.X == GetDestinationX(r.Type));
+        
+        public static int GetDestinationX(char amphiType) => 3 + (amphiType - 'A') * 2;
 
         public Amphi? GetCandidateInRoom(char type)
         {
+            if (IsDestinationInOrder(type))
+                return null;
             int xTarget = GetDestinationX(type);
-            return WaitingInRoom.FirstOrDefault(a => a.X == xTarget);
+            return Rooms.FirstOrDefault(a => a.X == xTarget);
         }
 
-        public bool IsDestinationFree(char type)
+        public bool IsDestinationInOrder(char type)
         {
             int xTarget = GetDestinationX(type);
-            return !WaitingInRoom.Any(a => a.X == xTarget && a.Type != type);
+            return !Rooms.Any(a => a.X == xTarget && a.Type != type);
         }
 
         public Amphi? PositionInRoomWhenPathIsFree(Amphi amphi, int depth)
         {
-            if(!IsDestinationFree(amphi.Type))
+            if(!IsDestinationInOrder(amphi.Type))
                 return null;
 
             int xTarget = GetDestinationX(amphi.Type);
@@ -152,21 +182,55 @@ public class Day23 : IAdvent
             while (x != xTarget)
             {
                 x += step;
-                if (InHall.Any(a => a.X == x))
+                if (Hall.Any(a => a.X == x))
                     return null;
             }
-            int? minDepth = AmphisReady.Where(a => a.X == x).Min(a => (int?)a.Y);
+            int? minDepth = Rooms.Where(a => a.X == x).Min(a => (int?)a.Y);
             int targetY = minDepth.HasValue ? minDepth.Value - 1 : depth + 1;
 
             return new Amphi(amphi.Type, targetY, xTarget);
         }
-
         public static bool IsInFrontOfRoom(int x) => x >= 3 && x <= 9 && x % 2 == 1;
+
+        public State MoveFromHallToRoom(Amphi amphi, Amphi newAmphi)
+            => new State(Rooms.Add(newAmphi), Hall.Remove(amphi));
+
+        public State MoveFromRoomToRoom(Amphi amphi, Amphi newAmphi)
+            => new State(Rooms.Remove(amphi).Add(newAmphi), Hall);
+
+        public State MoveFromRoomToHall(Amphi amphi, Amphi newAmphi)
+            => new State(Rooms.Remove(amphi), Hall.Add(newAmphi));
+
+        public override bool Equals(object? obj)
+        {
+            return obj is State state &&
+                Rooms.SequenceEqual(state.Rooms) &&
+                Hall.SequenceEqual(state.Hall);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(
+                Rooms.Aggregate(0, (total, next) => HashCode.Combine(total, next)),
+                Hall.Aggregate(0, (total, next) => HashCode.Combine(total, next)));
+        }
     }
-    public record Amphi(char Type, int Y, int X)
+
+    public record Amphi(char Type, int Y, int X) : IComparable<Amphi>
     {
         static readonly int[] MoveEnergyPerType = new[] { 1, 10, 100, 1000 };
         public int MoveEnergy => MoveEnergyPerType[Type - 'A'];
+
+        public int CompareTo(Amphi? other)
+        {
+            if (other == null) return 1;
+            int result = Type.CompareTo(other.Type);
+            if (result != 0) return result;
+            result = X.CompareTo(other.X);
+            if (result != 0) return result;
+            return Y.CompareTo(other.Y);
+        }
+
         public int MoveEnergyTo(Amphi other) => (Math.Abs(other.X - X) + Y - 1 + other.Y - 1) * MoveEnergy;
     }
 
@@ -177,10 +241,8 @@ public class Day23 : IAdvent
         {
             var sb = new StringBuilder(space[y]);
             var amphis = new List<Amphi>();
-            amphis.AddRange(state.InHall);
-            amphis.AddRange(state.WaitingInRoom);
-            foreach (var amphi in state.AmphisReady)
-                amphis.Add(amphi with { Type = char.ToLower(amphi.Type) });
+            amphis.AddRange(state.Hall);
+            amphis.AddRange(state.Rooms);
 
             foreach (Amphi amphi in amphis)
                 if (amphi.Y == y)
