@@ -22,7 +22,6 @@ b    .  b    .  .    c  b    c  b    c
  gggg    gggg    ....    gggg    gggg
 ";
 
-    [Fact]
     public void Run()
     {
         var input = Advent.ReadInputLines()

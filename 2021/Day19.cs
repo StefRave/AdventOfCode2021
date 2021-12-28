@@ -2,7 +2,6 @@ namespace AdventOfCode2021;
 
 public class Day19 : IAdvent
 {
-    [Fact]
     public void Run()
     {
         Vector3[][] scannerRows = Advent.ReadInput()

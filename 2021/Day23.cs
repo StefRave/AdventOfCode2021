@@ -8,7 +8,6 @@ public class Day23 : IAdvent
 {
     private string[] space = Array.Empty<string>();
 
-    [Fact]
     public void Run()
     {
         var input = Advent.ReadInputLines();

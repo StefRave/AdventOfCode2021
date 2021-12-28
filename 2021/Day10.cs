@@ -6,7 +6,6 @@ public class Day10 : IAdvent
     private static int ScoreClose(char c) => c switch { ')' => 1, ']' => 2, '}' => 3, '>' => 4 };
     private static char? CloseForOpen(char c) => c switch { '(' => ')', '[' => ']', '{' => '}', '<' => '>', _ => null };
 
-    [Fact]
     public void Run()
     {
         var input = Advent.ReadInputLines();

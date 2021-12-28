@@ -4,7 +4,6 @@ namespace AdventOfCode2021;
 
 public class Day05 : IAdvent
 {
-    [Fact]
     public void Run()
     {
         var input = Advent.ReadInputLines()

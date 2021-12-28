@@ -2,7 +2,6 @@ namespace AdventOfCode2021;
 
 public class Day07 : IAdvent
 {
-    [Fact]
     public void Run()
     {
         var input = Advent.ReadInput().Split(',').Select(int.Parse).OrderBy(x => x).ToArray();

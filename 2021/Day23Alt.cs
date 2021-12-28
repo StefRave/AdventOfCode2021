@@ -11,7 +11,6 @@ public class Day23Alt : IAdvent
     static int depth;
     static readonly int[] MoveEnergyPerType = new[] { 1, 10, 100, 1000 };
 
-    [Fact]
     public void Run()
     {
         string part1State = Regex.Replace(Advent.ReadInput(), "[#\r\n ]", "");

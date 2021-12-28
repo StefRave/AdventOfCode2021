@@ -2,7 +2,6 @@ namespace AdventOfCode2021;
 
 public class Day11 : IAdvent
 {
-    [Fact]
     public void Run()
     {
         int[][] input = Advent.ReadInputLines()
