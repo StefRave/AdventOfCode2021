@@ -18,7 +18,7 @@ public class Day24 : IAdvent
             code[^1].Add(instr);
         }
 
-#if false
+#if true
         var possibleInputs = new Dictionary<int, List<(int digit, int zin)>>();
         possibleInputs.Add(0, null);
         var inToOut = new Dictionary<int, List<(int digit, int zin)>>[code.Count];
@@ -63,9 +63,6 @@ public class Day24 : IAdvent
         var r = new Dictionary<int, (string serialMin, string serialMax)>() { [0] = ("", "") };
         for (int codeIndex = code.Count - 1; codeIndex >= 0; codeIndex--)
             r = GetPossibleZ(r, codeIndex);
-#endif
-        Advent.AssertAnswer1(r.Values.Min(s => s.serialMax));
-        Advent.AssertAnswer2(r.Values.Min(s => s.serialMin));
 
         Dictionary<int, (string serialMin, string serialMax)> GetPossibleZ(Dictionary<int, (string serialMin, string serialMax)> possibleOutputs, int codeIndex, int high = 1000000)
         {
@@ -114,6 +111,10 @@ public class Day24 : IAdvent
             //output.WriteLine($"{codeIndex}  {r.Count,-10} r = GetPossibleZ(r, --codeIndex, low: {r.Min(a => (int?)a.Key)}, high: {r.Max(a => (int?)a.Key)});");
             return candidates;
         }
+
+#endif
+        Advent.AssertAnswer1(r.Values.Min(s => s.serialMax));
+        Advent.AssertAnswer2(r.Values.Min(s => s.serialMin));
     }
 
     private static int Execute(IList<Instr> code, int digit, int z)

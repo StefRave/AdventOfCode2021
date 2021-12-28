@@ -64,7 +64,7 @@ public class Advent
     private static Type GetAdventSoltion()
     {
         IEnumerable<Type> enumerable = Assembly.GetExecutingAssembly().GetTypes().ThatImplement<IAdvent>();
-        var type = enumerable.FirstOrDefault(t => Regex.Match(t.Name, @"\d+[a-z]*$", RegexOptions.IgnoreCase).Value.TrimStart('0') == Day.TrimStart('0'));
+        var type = enumerable.FirstOrDefault(t => Regex.Match(t.Name, @"\d+[a-z]*$", RegexOptions.IgnoreCase).Value.TrimStart('0').Equals(Day.TrimStart('0'), StringComparison.OrdinalIgnoreCase));
         return type;
     }
 
