@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "AdventOfCode2019": {
+      "commandName": "Project",
+      "commandLineArgs": "--day 17"
+    }
+  }
+}
