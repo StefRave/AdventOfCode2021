@@ -63,7 +63,6 @@ YN......#               VT..#....QG
   #########.###.###.#############  
            B   J   C               
            U   P   P               ";
-    const string sampleInput3 = @"";
 
     [Theory]
     [InlineData(sampleInput1, 23)]
@@ -73,35 +72,70 @@ YN......#               VT..#....QG
         Assert.Equal(expectedSteps, DoPart1(input));
     }
 
-    const string samplePart2Input2 = @"";
+    const string samplePart2Input2 = @"             Z L X W       C                 
+             Z P Q B       K                 
+  ###########.#.#.#.#######.###############  
+  #...#.......#.#.......#.#.......#.#.#...#  
+  ###.#.#.#.#.#.#.#.###.#.#.#######.#.#.###  
+  #.#...#.#.#...#.#.#...#...#...#.#.......#  
+  #.###.#######.###.###.#.###.###.#.#######  
+  #...#.......#.#...#...#.............#...#  
+  #.#########.#######.#.#######.#######.###  
+  #...#.#    F       R I       Z    #.#.#.#  
+  #.###.#    D       E C       H    #.#.#.#  
+  #.#...#                           #...#.#  
+  #.###.#                           #.###.#  
+  #.#....OA                       WB..#.#..ZH
+  #.###.#                           #.#.#.#  
+CJ......#                           #.....#  
+  #######                           #######  
+  #.#....CK                         #......IC
+  #.###.#                           #.###.#  
+  #.....#                           #...#.#  
+  ###.###                           #.#.#.#  
+XF....#.#                         RF..#.#.#  
+  #####.#                           #######  
+  #......CJ                       NM..#...#  
+  ###.#.#                           #.###.#  
+RE....#.#                           #......RF
+  ###.###        X   X       L      #.#.#.#  
+  #.....#        F   Q       P      #.#.#.#  
+  ###.###########.###.#######.#########.###  
+  #.....#...#.....#.......#...#.....#.#...#  
+  #####.#.###.#######.#######.###.###.#.#.#  
+  #.......#.......#.#.#.#.#...#...#...#.#.#  
+  #####.###.#####.#.#.#.#.###.###.#.###.###  
+  #.......#.....#.#...#...............#...#  
+  #############.#.#.###.###################  
+               A O F   N                     
+               A A D   M                     ";
 
     [Theory]
-    [InlineData(samplePart2Input2, 72)]
+    [InlineData(samplePart2Input2, 396)]
     public void Part2Sample(string input, int expectedSteps)
     {
-        //Assert.Equal(expectedSteps, DoPart2(input));
+        Assert.Equal(expectedSteps, DoPart2(input));
     }
-
 
     void IAdvent.Run()
     {
         int result = DoPart1(GetInput());
-        Advent.AssertAnswer1(result, expected: 23);
+        Advent.AssertAnswer1(result, expected: 528);
 
-        //result = DoPart2(GetInput());
-        //Advent.AssertAnswer2(result, expected: 3546);
+        result = DoPart2(GetInput());
+        Advent.AssertAnswer2(result, expected: 6214);
     }
 
     private static int DoPart1(string input)
     {
         var (maze, portalPostions, startPos) = ParseInput(input);
-        return Solve(maze, portalPostions, startPos);
+        return Solve(maze, portalPostions, startPos, doLevels: false);
     }
 
     private static int DoPart2(string input)
     {
         var (maze, portalPostions, startPos) = ParseInput(input);
-        return 0;
+        return Solve(maze, portalPostions, startPos, doLevels: true);
     }
 
     private static (char[][] maze, Dictionary<(int y, int x), ((int y, int x), string id)>, (int y, int x) startPos) ParseInput(string input)
@@ -154,75 +188,44 @@ YN......#               VT..#....QG
             .Single(p => maze[p.y][p.x] == '.');
     }
 
-    private static int Solve(char[][] maze, Dictionary<(int y, int x), ((int y, int x), string id)> portalPositions, (int y, int x) startPos)
+    private static int Solve(char[][] maze, Dictionary<(int y, int x), ((int y, int x), string id)> portalPositions, (int y, int x) startPos, bool doLevels = false)
     {
-        var cache = new Dictionary<State, int>();
-        var optionsCache = new Dictionary<OptionState, List<(char c, int cost)>>();
+        var pathStart = ImmutableQueue<(string, int, int)>.Empty;
 
-        int result = GetMinimalCost(startPos);
-        return result;
-
-        int GetMinimalCost((int y, int x) startPos)
+        int[,,] visited = new int[1000,maze.Length,maze[0].Length];
+        var queue = new PriorityQueue<((int y, int x), int level, ImmutableQueue<(string, int, int)> path), int>();
+        queue.Enqueue((startPos, 0, pathStart), 0);
+        while (queue.TryDequeue(out var posAndLevel, out int cost))
         {
-            //var optionsState = new OptionState(startPos, toFind);
-            //if (optionsCache.TryGetValue(optionsState, out var found))
-            //    return found;
+            var pos = posAndLevel.Item1;
+            int level = posAndLevel.level;
+            var path = posAndLevel.path;
+            char c = maze[pos.y][pos.x];
+            if (c == '#' || visited[level, pos.y,pos.x] != 0)
+                continue;
 
-            int[,] visited = new int[maze.Length,maze[0].Length];
-            var queue = new PriorityQueue<(int y, int x), int>();
-            queue.Enqueue(startPos, 0);
-            while (queue.TryDequeue(out var pos, out int cost))
+            visited[level, pos.y,pos.x] = cost;
+            if (char.IsLetter(c))
             {
-                char c = maze[pos.y][pos.x];
-                if (c == '#' || visited[pos.y,pos.x] != 0)
+                var (newPos, id) = portalPositions[pos];
+                if ((id == "AA" || id == "ZZ") && (level != 0))
                     continue;
-
-                visited[pos.y,pos.x] = cost;
-                if (char.IsLetter(c))
-                {
-                    if (c == 'Z')
-                        return cost - 1; // position before Z portal
-                    queue.Enqueue(portalPositions[pos].Item1, cost);
-                    continue;
-                }
-                foreach (var d in offsets)
-                    queue.Enqueue((pos.y + d.dy, pos.x + d.dx), cost + 1);
+                if (id == "ZZ")
+                    return cost - 1; // position before Z portal
+                int newLevel = !doLevels ? level : NewLevel(maze, pos, level);
+                if (newLevel < 0)
+                    1.ToString();
+                ImmutableQueue<(string, int, int)> newPath = path.Enqueue((id, level, cost));
+                if (newLevel >= 0)
+                    queue.Enqueue((newPos, newLevel, newPath), cost);
+                continue;
             }
-            //optionsCache.Add(optionsState, found);
-            throw new Exception("not found");
+            foreach (var p in GetOffsetsFrom(pos))
+                queue.Enqueue((p, level, path), cost + 1);
         }
+        throw new Exception("not found");
     }
 
-
-    public record OptionState((int,int) p1, string p2);
-
-    public class State
-    {
-        string toFind;
-        ImmutableArray<(int y, int x)> startPos;
-
-        public State(string toFind, ImmutableArray<(int y, int x)> startPos)
-        {
-            this.toFind = toFind;
-            this.startPos = startPos;
-        }
-
-        public override bool Equals(object? obj)
-        {
-            var y = obj as State ?? throw new InvalidCastException();
-            return
-                startPos.SequenceEqual(y.startPos) &&
-                toFind == y.toFind;
-        }
-
-        public override int GetHashCode()
-        {
-            return HashCode.Combine(startPos.Aggregate(0, (x,y) => HashCode.Combine(x, y)), toFind);
-        }
-    }
-
-    private static void PrintMaze(char[][] maze)
-        => Console.WriteLine("\n" + string.Join("\n", maze.Select(ca => new string(ca))));
-
-
+    private static int NewLevel(char[][] maze, (int y, int x) pos, int currentLevel)
+        => pos.x > 4 && pos.y > 4 && pos.x < (maze[0].Length - 4) && pos.y < (maze.Length - 4) ? currentLevel + 1 : currentLevel - 1; 
 }
