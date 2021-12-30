@@ -3,10 +3,8 @@ using AdventOfCode2019.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
 using Xunit;
 
 namespace AdventOfCode2019;
@@ -47,55 +45,115 @@ public class Day18 : IAdvent
 
     }
 
+    const string samplePart2Input2 = @"###############
+#d.ABC.#.....a#
+###### . ######
+######.@.######
+###### . ######
+#b.....#.....c#
+###############";
+
+    [Theory]
+    [InlineData(samplePart2Input2, 72)]
+    public void Part2Sample(string input, int expectedSteps)
+    {
+        Assert.Equal(expectedSteps, DoPart2(input));
+    }
+
+
     void IAdvent.Run()
     {
-        var input = GetInput();
-
-
-        int result = DoPart1(input);
+        int result = DoPart1(GetInput());
         Advent.AssertAnswer1(result, expected: 3546);
+
+        result = DoPart2(GetInput());
+        Advent.AssertAnswer2(result, expected: 3546);
     }
 
     private static int DoPart1(string input)
     {
-        char[][] maze = input.SplitByNewLine().Select(l => l.ToCharArray()).ToArray();
-        var tmpDict = new Dictionary<char, (int y, int x)>();
+        var (maze, tmpDict, startPos) = ParseInput(input);
+
+        return Solve(maze, tmpDict, startPos);
+    }
+
+    private static int DoPart2(string input)
+    {
+        var (maze, tmpDict, pos) = ParseInput(input);
+        maze[pos.y+0][pos.x+0] = '#';
+        maze[pos.y-1][pos.x+0] = '#';
+        maze[pos.y+1][pos.x+0] = '#';
+        maze[pos.y+0][pos.x-1] = '#';
+        maze[pos.y+0][pos.x+1] = '#';
+        var posses = new[]
+        {
+            (pos.y - 1, pos.x - 1),
+            (pos.y - 1, pos.x + 1),
+            (pos.y + 1, pos.x - 1),
+            (pos.y + 1, pos.x + 1),
+        };
+        return Solve(maze, tmpDict, posses);
+    }
+
+    private static (char[][] maze, Dictionary<char, (int y, int x)> tmpDict, (int y, int x) startPos) ParseInput(string input)
+    {
+        var maze = input.SplitByNewLine().Select(l => l.ToCharArray()).ToArray();
+        var dict = new Dictionary<char, (int y, int x)>();
         for (int y = 0; y < maze.Length; y++)
             for (int x = 0; x < maze[0].Length; x++)
             {
                 char c = maze[y][x];
                 if (c != '#' && c != '.')
-                    tmpDict.Add(c, (y, x));
+                    dict.Add(c, (y, x));
             }
-        var pos = tmpDict['@'];
-        tmpDict.Remove('@');
+        var startPos = dict['@'];
+        dict.Remove('@');
 
+        return (maze, dict, startPos);
+    }
 
+    private static int Solve(char[][] maze, Dictionary<char, (int y, int x)> tmpDict, (int y, int x) startPos)
+    {
+        return Solve(maze, tmpDict, new[] { startPos });
+    }
+
+    private static int Solve(char[][] maze, Dictionary<char, (int y, int x)> tmpDict, (int y, int x)[] posses)
+    {
         var cache = new Dictionary<State, int>();
+        var optionsCache = new Dictionary<OptionState, List<(char c, int cost)>>();
 
-        int result = GetMinimalCost(pos, new string(tmpDict.Keys.Where(c => c != '@').ToArray()));
+        int result = GetMinimalCost(
+            posses.ToImmutableArray(),
+            new string(tmpDict.Keys.Where(c => c != '@').ToArray()));
+        
         return result;
 
 
-        int GetMinimalCost((int y, int x) pos, string toFind)
+        int GetMinimalCost(ImmutableArray<(int y, int x)> posses, string toFind)
         {
-            var state = new State(toFind, pos);
+            var state = new State(toFind, posses);
             if (cache.TryGetValue(state, out var cachedResult))
                 return cachedResult;
 
-            var found = GetOptionsWithCost(pos, toFind);
-            if (found.Count == 0)
-                return 0;
-
+            bool noResults = true;
             int minValue = int.MaxValue;
-            foreach (var option in found)
+            for (int index = 0; index < posses.Length; index++)
             {
-                var newPos = tmpDict[option.c];
-                var newToFind = RemoveCharacterFromStrin(toFind, option.c);
-                int newValue = option.cost + GetMinimalCost(newPos, newToFind);
-                minValue = Math.Min(minValue, newValue);
-            }
+                var pos = posses[index];
+                var found = GetOptionsWithCost(pos, toFind);
 
+                foreach (var option in found)
+                {
+                    var newPos = tmpDict[option.c];
+                    var newPosses = posses.SetItem(index, newPos);
+                    var newToFind = RemoveCharacterFromStrin(toFind, option.c);
+                    int newValue = option.cost + GetMinimalCost(newPosses, newToFind);
+                    minValue = Math.Min(minValue, newValue);
+                    noResults = false;
+                }
+            }
+            if (noResults)
+                minValue = 0;
             cache.Add(state, minValue);
             return minValue;
         }
@@ -108,7 +166,11 @@ public class Day18 : IAdvent
 
         List<(char c, int cost)> GetOptionsWithCost((int y, int x) startPos, string toFind)
         {
-            var found = new List<(char c, int cost)>();
+            var optionsState = new OptionState(startPos, toFind);
+            if (optionsCache.TryGetValue(optionsState, out var found))
+                return found;
+
+            found = new List<(char c, int cost)>();
             int[,] visited = new int[maze.Length,maze[0].Length];
             var queue = new Queue<(int y, int x, int cost)>();
             queue.Enqueue((startPos.y, startPos.x, 0));
@@ -128,16 +190,19 @@ public class Day18 : IAdvent
                 foreach (var d in offsets)
                     queue.Enqueue((pos.y + d.dy, pos.x + d.dx, pos.cost + 1));
             }
+            optionsCache.Add(optionsState, found);
             return found;
         }
     }
 
+    public record OptionState((int,int) p1, string p2);
+
     public class State
     {
         string toFind;
-        (int y, int x) startPos;
+        ImmutableArray<(int y, int x)> startPos;
 
-        public State(string toFind, (int y, int x) startPos)
+        public State(string toFind, ImmutableArray<(int y, int x)> startPos)
         {
             this.toFind = toFind;
             this.startPos = startPos;
@@ -147,22 +212,18 @@ public class Day18 : IAdvent
         {
             var y = obj as State ?? throw new InvalidCastException();
             return
-                startPos == y.startPos &&
-                toFind ==y.toFind;
+                startPos.SequenceEqual(y.startPos) &&
+                toFind == y.toFind;
         }
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(startPos, toFind);
+            return HashCode.Combine(startPos.Aggregate(0, (x,y) => HashCode.Combine(x, y)), toFind);
         }
     }
-    
 
-
-
-
-    //private static void PrintMaze(char[][] maze)
-    //    => Console.WriteLine("\n" + string.Join("\n", maze.Select(ca => new string(ca))));
+    private static void PrintMaze(char[][] maze)
+        => Console.WriteLine("\n" + string.Join("\n", maze.Select(ca => new string(ca))));
 
 
 }
