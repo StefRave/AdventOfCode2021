@@ -20,8 +20,6 @@ public class Day21 : IAdvent
 
     void IAdvent.Run()
     {
-        var memory = GetInput();
-
         string code = @"NOT D T
 NOT T J
 NOT A T
@@ -32,13 +30,38 @@ NOT T T
 AND T J
 WALK
 ";
+        Advent.AssertAnswer1(Execute(code), 19349722);
 
-        var intInput = code.Replace("\r", "").Select(c => (long)c).ToArray();
-        var intCode = new IntCode(memory.ToArray(), intInput);
-        intCode.Run();
-        var result = intCode.Output.Aggregate("", (s, c) => s + (char)c);
-        WriteLine($"Len {intCode.Output.Count,8} {intCode.Output[^1]}");
-        Advent.AssertAnswer1(intCode.Output[^1], 19349722);
 
+
+        code = @"NOT D T
+NOT T J
+NOT A T
+NOT T T
+AND B T
+AND C T
+NOT T T
+AND T J
+NOT E T
+NOT T T
+OR H T
+AND T J
+NOT A T
+OR T J
+RUN
+";
+
+        Advent.AssertAnswer2(Execute(code), 1141685254);
+
+
+        long Execute(string code)
+        {
+            var intInput = code.Replace("\r", "").Select(c => (long)c).ToArray();
+            var intCode = new IntCode(GetInput(), intInput);
+            intCode.Run();
+            var result = intCode.Output.Aggregate("", (s, c) => s + (char)c);
+            //WriteLine(result);
+            return intCode.Output[^1];
+        }
     }
 }
