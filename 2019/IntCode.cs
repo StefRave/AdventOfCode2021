@@ -14,7 +14,7 @@ namespace AdventOfCode2019
         public long InstructionsExecuted { get; private set; }
         private bool haltRequested = false;
 
-        public IntCode(ICollection<long> memory, IEnumerable<long> input)
+        public IntCode(ICollection<long> memory, IEnumerable<long> input = null)
         {
             this.Input = new Queue<long>(input ?? Array.Empty<long>());
             Memory = new ExtendedMemory(memory);
