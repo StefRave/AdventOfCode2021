@@ -7,6 +7,7 @@ namespace AdventOfCode2019
     {
         public ExtendedMemory Memory { get; }
         public List<long> Output { get; } = new List<long>();
+        public string OutputString => new string(Output.Select(x => (char)x).ToArray());
         public Queue<long> Input { get; }
         public int ProgramCounter { get; private set; } = 0;
         public long RelativeBase { get; set; }
@@ -38,6 +39,25 @@ namespace AdventOfCode2019
                 ProgramCounter = ExecuteInstruction(ProgramCounter);
                 InstructionsExecuted++;
             }
+        }
+
+        public bool RunUntilInputNeeded()
+        {
+            try
+            {
+                Run();
+                return false;
+            }
+            catch(InputNeededException)
+            {
+                return true;
+            }
+        }
+
+        public void AddInput(string ascii)
+        {
+            foreach (var c in ascii)
+                Input.Enqueue(c);
         }
 
         private int ExecuteInstruction(int opcodeOffset)
