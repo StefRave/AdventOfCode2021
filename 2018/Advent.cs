@@ -36,7 +36,7 @@ public class Advent
                     Console.WriteLine($"Day {o.Day} not found");
                     return 10;
                 }
-                Console.WriteLine($"Running {type.Name}");
+                Console.WriteLine($"Running {type.Name}" + (UseSampleData ? " with sample data" : ""));
                 var adv = (IAdvent)Activator.CreateInstance(type);
                 var stopWatch = Stopwatch.StartNew();
                 try
