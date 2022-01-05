@@ -15,7 +15,7 @@ public class Day05 : IAdvent
 
         var options = "abcdefghijklmnopqrstuvw".Select(c => (c: c, left: Colapse(Regex.Replace(input, char.ToString(c), "", RegexOptions.IgnoreCase))));
         left = options.OrderBy(o => o.left.Length).First().left;
-        Advent.AssertAnswer1(left.Length, expected: 6942, sampleExpected: 4);
+        Advent.AssertAnswer2(left.Length, expected: 6942, sampleExpected: 4);
     }
 
     private static string Colapse(string input)
