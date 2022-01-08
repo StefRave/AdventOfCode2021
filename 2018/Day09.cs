@@ -58,6 +58,7 @@ public class Day09 : IAdvent
         return playerScores.Max();
 
 
+#pragma warning disable CS8321 // Local function is declared but never used
         void PrintField(int[] field)
         {
             int i = 0;
@@ -76,5 +77,6 @@ public class Day09 : IAdvent
             
             Console.WriteLine("");
         }
+#pragma warning restore CS8321 // Local function is declared but never used
     }
 }

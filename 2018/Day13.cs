@@ -100,6 +100,7 @@ public class Day13 : IAdvent
         return result;
 
 
+#pragma warning disable CS8321 // Local function is declared but never used
         void Print()
         {
             Console.Clear();
