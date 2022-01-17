@@ -21,7 +21,8 @@ public class Day17 : IAdvent
 #############
 ..#...#...#..
 ..#####...^..";
-    string part2SampleInput = @"#######...#####
+#pragma warning disable CS0414
+    readonly string part2SampleInput = @"#######...#####
 #.....#...#...#
 #.....#...#...#
 ......#...#...#

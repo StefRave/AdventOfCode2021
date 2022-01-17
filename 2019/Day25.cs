@@ -67,7 +67,7 @@ public class Day25 : IAdvent
             WriteLine(array.AsString());
 
 
-            string line = initial.Count > 0 ? initial.Dequeue() : ReadLine();
+            string line = initial.Count > 0 ? initial.Dequeue() : ReadLine() ?? "";
             if (line == "history")
             {
                 WriteLine('"' + string.Join("\",\"", history) + '"');

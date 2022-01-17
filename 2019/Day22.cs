@@ -1,5 +1,5 @@
 #nullable enable
-using System.Diagnostics;
+using System.Numerics;
 using System.Text.RegularExpressions;
 
 namespace AdventOfCode2019;
@@ -10,63 +10,49 @@ public class Day22 : IAdvent
 
     void IAdvent.Run()
     {
-        Line[] commands = Parse(GetInput());
+        long index = 2019;
+        long cardCount = 10007;
 
-        Advent.AssertAnswer1(Execute(commands, 2019, 10007), 3377);
+        Line[] lines = Parse(GetInput());
+        long answer1 = Execute(lines, index, cardCount);
+        Advent.AssertAnswer1(answer1, 3377);
 
-        Process.GetCurrentProcess().Kill(); // FAIL to hard: Explenation is here https://codeforces.com/blog/entry/72593
+        // Try same using mul,add
+        MulAdd[] mulAdd = lines.Select(l => l.ToMulAdd(cardCount)).ToArray();
+        MulAdd combined = MulAdd.Combine(cardCount, mulAdd);
+        Assert.Equal(answer1, combined.Execute(index, cardCount));
 
-        long index = 2020;
-        long cardCount = 119315717514047;
-        for (long i = 0; i < cardCount; i++)
+        // check if reverse operation works
+        mulAdd = lines.Select(l => l.ToMulAddReverse(cardCount)).Reverse().ToArray();
+        combined = MulAdd.Combine(cardCount, mulAdd);
+        Assert.Equal(index, combined.Execute(answer1, cardCount));
+
+
+        index = 2020;
+        cardCount = 119315717514047;
+        long times = 101741582076661;
+        long fac2TableFactor = 1;
+        var fact2Table = new List<MulAdd>();
+        var reverseCombined = MulAdd.Combine(cardCount, lines.Reverse().Select(l => l.ToMulAddReverse(cardCount)).ToArray());
+        while (fac2TableFactor < times)
         {
-            foreach (var command in commands.Reverse())
-            {
-                index = command switch
-                {
-                    (true, 0) => DealIntoNewStackR(index, cardCount),
-                    (true, int num) => DealWithIncrementR(index, cardCount, num),
-                    (false, int num) => CutStackR(index, cardCount, num),
-                };
-            }
-            WriteLine(index.ToString());
-            if (index == 2020)
-                1.ToString();
+            if ((fac2TableFactor & times) != 0)
+                fact2Table.Add(reverseCombined);
+            fac2TableFactor *= 2;
+            reverseCombined = MulAdd.Combine(cardCount, reverseCombined, reverseCombined);
         }
-        //Advent.AssertAnswer2(index, 2020);
+        reverseCombined = MulAdd.Combine(cardCount, fact2Table.ToArray());
+        
+        long answer2 = reverseCombined.Execute(index, cardCount);
+        Advent.AssertAnswer1(answer2, 29988879027217);
     }
 
     private static long Execute(Line[] commands, long index, long cardCount)
     {
         foreach (var command in commands)
-        {
-            index = command switch
-            {
-                (true, 0) => DealIntoNewStack(index, cardCount),
-                (true, int num) => DealWithIncrement(index, cardCount, num),
-                (false, int num) => CutStack(index, cardCount, num),
-            };
-        }
+            index = command.Execute(index, cardCount);
         return index;
     }
-
-    private static long CutStack(long index, long cardCount, long num)
-        => (index + cardCount - num) % cardCount;
-
-    private static long DealIntoNewStack(long index, long cardCount)
-        => cardCount - index - 1;
-
-    private static long DealWithIncrement(long index, long cardCount, int increment)
-        => (index * increment) % cardCount;
-
-    private static long CutStackR(long index, long cardCount, long num)
-        => (index + cardCount + num) % cardCount;
-
-    private static long DealIntoNewStackR(long index, long cardCount)
-       => cardCount - index - 1;
-
-    private static long DealWithIncrementR(long index, long cardCount, int increment)
-        => (index * ModInverse(increment, cardCount)) % cardCount;
 
     static long ModInverse(long a, long m)
     {
@@ -82,16 +68,71 @@ public class Day22 : IAdvent
         return x;
     }
 
-
     private static Line[] Parse(string input)
     {
         var matches = Regex.Matches(input.ReplaceLineEndings("\n"), @"^(cut|deal) .*?([-\d]+)?$", RegexOptions.Multiline | RegexOptions.ECMAScript);
         var result = matches
-            .Select(m => new Line(m.Groups[1].Value == "deal", m.Groups[2].Success ? int.Parse(m.Groups[2].Value) : 0))
+            .Select(m => new Line(ToEnum(m), m.Groups[2].Success ? int.Parse(m.Groups[2].Value) : 0))
             .ToArray();
         Assert.Equal(input.SplitByNewLine().Length, result.Length);
         return result;
+
+        ShuffleMethod ToEnum(Match m)
+            => (m.Groups[1].Value == "cut") ? ShuffleMethod.Cut : m.Groups[2].Success ? ShuffleMethod.DealInto : ShuffleMethod.DealNew;
     }
 
-    public record Line(bool deal, int number);
+    public enum ShuffleMethod { Cut, DealInto, DealNew };
+
+    public record Line(ShuffleMethod Method, int Number)
+    {
+        public long Execute(long index, long cardCount)
+            => Method switch
+            {
+                ShuffleMethod.DealNew => cardCount - index - 1,
+                ShuffleMethod.DealInto => (index * Number) % cardCount,
+                ShuffleMethod.Cut => (index + cardCount - Number) % cardCount,
+                _ => throw new ArgumentOutOfRangeException(),
+            };
+
+        public MulAdd ToMulAdd(long cardCount)
+        {
+            return Method switch
+            {
+                ShuffleMethod.DealNew => new MulAdd(cardCount - 1, cardCount - 1), // reverse deck is same as DealInto(cardCount-1) and then change index - 1
+                ShuffleMethod.DealInto => new MulAdd(Number, 0),
+                ShuffleMethod.Cut => new MulAdd(1, cardCount - Number),
+                _ => throw new ArgumentOutOfRangeException(),
+            };
+        }
+
+        public long ExecuteReverse(long index, long cardCount)
+            => Method switch
+            {
+                ShuffleMethod.DealNew => cardCount - index - 1,
+                ShuffleMethod.DealInto => (index * ModInverse(Number, cardCount)) % cardCount,
+                ShuffleMethod.Cut => (index + cardCount + Number) % cardCount,
+                _ => throw new ArgumentOutOfRangeException(),
+            };
+        
+        public MulAdd ToMulAddReverse(long cardCount)
+        {
+            return Method switch
+            {
+                ShuffleMethod.DealNew => new MulAdd(cardCount - 1, cardCount - 1),
+                ShuffleMethod.DealInto => new MulAdd(ModInverse(Number, cardCount), 0),
+                ShuffleMethod.Cut => new MulAdd(1, cardCount + Number),
+                _ => throw new ArgumentOutOfRangeException(),
+            };
+        }
+    }
+
+    public record MulAdd(BigInteger Mul, BigInteger Add)
+    {
+        // ((a*X + b) * c + d) == (a*c)X + b*c + d
+        public static MulAdd Combine(long cardCount, params MulAdd[] input)
+            => input.Aggregate((a, b) => new MulAdd((a.Mul * b.Mul) % cardCount, (a.Add * b.Mul + b.Add) % cardCount));
+
+        public long Execute(long index, long cardCount)
+            => (long)(((index * Mul) % cardCount) + Add) % cardCount;
+    }
 }
