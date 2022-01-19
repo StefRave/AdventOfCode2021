@@ -9,135 +9,169 @@ public class Day15 : IAdvent
     public void Run()
     {
         var objects = Advent.ReadInputLines()
-                    .Select((line, y) => line.Select((c, x) => (y, x, c)))
+                    .Select((line, y) => line.Split(' ')[0].Select((c, x) => (y, x, c)))
                     .SelectMany(l => l)
                     .Where(l => l.c != '.')
                     .ToArray();
 
-        Dictionary<(int y, int x), Fighter> fighters = objects.Where(l => l.c == 'G' || l.c == 'E')
-            .ToDictionary(l => (l.y, l.x), l => new Fighter(l.c, 200, (l.y, l.x)));
         var wall = objects.Where(l => l.c == '#')
             .Select(l => (y: l.y, x: l.x))
             .ToHashSet();
 
         int maxX = wall.Max(kv => kv.x);
         int maxY = wall.Max(kv => kv.y);
-
-        Console.WriteLine($"Initial");
-        Print();
-        int turn = 0;
-        while (fighters.Select(f => f.Value.C).Distinct().Count() > 1)
-        {
-            var fightersInOrder = fighters.OrderBy(f => f.Key.y * 1000 + f.Key.x).Select(f => f.Value);
-            bool breakEarly = false;
-            foreach (var fighter in fightersInOrder)
-            {
-                if (fighters.Select(f => f.Value.C).Distinct().Count() == 1)
-                {
-                    breakEarly = true;
-                    break;
-                }
-                if (fighter.HitPoints <= 0)
-                    continue;
-                var (closestFighter, isInFightingDistance, newPosition) = GetClosestFighter(fighter);
-                if (isInFightingDistance)
-                {
-                    closestFighter.HitPoints -= 3;
-                    if (closestFighter.HitPoints <= 0)
-                        fighters.Remove(closestFighter.Position);
-                }
-                if (fighter.Position != newPosition)
-                {
-                    fighters.Remove(fighter.Position);
-                    fighter.Position = newPosition;
-                    fighters.Add(newPosition, fighter);
-                }
-            }
-            if (!breakEarly)
-            {
-                Console.WriteLine($"Turn {++turn}");
-                Print();
-            }
-        }
-
-        int totalHitPoints = fighters.Sum(f => f.Value.HitPoints);
+        var (turn, totalHitPoints, elvesLeft) = Fight();
         Console.WriteLine($"Total turns {turn}  points={totalHitPoints}");
-        Advent.AssertAnswer1(turn * totalHitPoints, 0, 27730);
+        Advent.AssertAnswer1(turn * totalHitPoints, 248235, 27730);
 
-        (Fighter closestFighter, bool isInFightingDistance, (int y, int x) newPosition) GetClosestFighter(Fighter fighter)
+        int elvesAtStart = objects.Where(o => o.c == 'E').Count();
+        for (int elveAttackPoints = 3; ; elveAttackPoints++)
         {
-            var beenThere = new HashSet<(int y, int x)>();
-            var queue = new Queue<((int y, int x) pos, int distance, (int y, int x) firstMove)>();
-
-            QueueOptions(fighter.Position);
-            beenThere.Add(fighter.Position);
-            while (queue.Count > 0)
-            {
-                var (pos, distance, firstMove) = queue.Dequeue();
-                if (beenThere.Contains(pos))
-                    continue;
-                beenThere.Add(pos);
-                if (wall.Contains(pos))
-                    continue;
-                if (fighters.TryGetValue(pos, out Fighter opponent))
-                {
-                    if (opponent.C == fighter.C)
-                        continue;
-                    if (distance > 2)
-                        return (opponent, isInFightingDistance: false, firstMove);
-                    var newPos = distance == 1 ? fighter.Position : firstMove;
-                    opponent =
-                        (
-                        from d in moves
-                        let oponentPos = (newPos.y + d.dy, newPos.x + d.dx)
-                        where fighters.ContainsKey(oponentPos)
-                        let o = fighters[oponentPos]
-                        where o.C != fighter.C
-                        orderby o.HitPoints, o.Position.y, o.Position.x
-                        select o
-                        ).First();
-                    return (opponent, isInFightingDistance: true, newPos);
-                }
-                QueueOptions(pos, distance + 1, firstMove);
-            }
-            return (fighter, false, fighter.Position);
-
-            void QueueOptions((int y, int x) pos, int newDistance = 1, (int y, int x)? firstMove = null)
-            {
-                foreach (var move in moves)
-                    Add((pos.y + move.dy, pos.x + move.dx), newDistance, firstMove);
-
-                void Add((int y, int x) newPos, int newDistance, (int y, int x)? firstMove)
-                    => queue.Enqueue((newPos, newDistance, firstMove ?? newPos));
-            }
+            (turn, totalHitPoints, elvesLeft) = Fight(elveAttackPoints: elveAttackPoints);
+            if (elvesLeft == elvesAtStart)
+                break;
         }
+        Console.WriteLine($"Total turns {turn}  points={totalHitPoints}");
+        Advent.AssertAnswer2(turn * totalHitPoints, 46784, 4988);
 
-        void Print()
+        (int turn, int totalHitPoints, int elvesLeft) Fight(int elveAttackPoints = 3)
         {
-            //Console.Clear();
-            var sb = new StringBuilder();
-            for (int y = 0; y <= maxY; y++)
+            var fighters = objects.Where(l => l.c == 'G' || l.c == 'E')
+                .ToDictionary(l => (l.y, l.x), l => new Fighter(l.c, 200, (l.y, l.x)));
+
+            //Console.WriteLine($"Initial");
+            //Print();
+
+            turn = 0;
+            while (fighters.Select(f => f.Value.C).Distinct().Count() > 1)
             {
-                var hpsb = new StringBuilder();
-                for (int x = 0; x <= maxY; x++)
+                var fightersInOrder = fighters.OrderBy(f => f.Key.y).ThenBy(f => f.Key.x).Select(f => f.Value);
+                bool breakEarly = false;
+                foreach (var fighter in fightersInOrder)
                 {
-                    char c = '.';
-                    if (fighters.TryGetValue((y, x), out Fighter thing))
+                    if (fighters.Select(f => f.Value.C).Distinct().Count() == 1)
                     {
-                        c = thing.C;
-                        hpsb.Append($" {c}({thing.HitPoints})");
+                        breakEarly = true;
+                        break;
                     }
-                    else if (wall.Contains((y, x)))
-                        c = '#';
-                    sb.Append(c);
+                    if (fighter.HitPoints <= 0)
+                        continue;
+                    var newPosition = Move(fighter);
+                    if (fighter.Position != newPosition)
+                    {
+                        fighters.Remove(fighter.Position);
+                        fighter.Position = newPosition;
+                        fighters.Add(newPosition, fighter);
+                    }
+                    var opponent = FindOpponent(fighter);
+                    if (opponent != null)
+                    {
+                        opponent.HitPoints -= fighter.C == 'G' ? 3 : elveAttackPoints;
+                        if (opponent.HitPoints <= 0)
+                            fighters.Remove(opponent.Position);
+                    }
                 }
-                sb.Append("  " + hpsb.ToString() + '\n');
+                if (!breakEarly)
+                {
+                    turn++;
+                    //Console.WriteLine($"Turn {turn}");
+                    //Print();
+                }
             }
-            Console.WriteLine(sb.ToString());
+
+            int totalHitPoints = fighters.Sum(f => f.Value.HitPoints);
+            int elvesLeft = fighters.Where(f => f.Value.C == 'E').Count();
+            return (turn, totalHitPoints, elvesLeft);
+
+
+#pragma warning disable CS8321 // Local function is declared but never used
+            void Print()
+            {
+                var sb = new StringBuilder();
+                for (int y = 0; y <= maxY; y++)
+                {
+                    var hpsb = new StringBuilder();
+                    for (int x = 0; x <= maxY; x++)
+                    {
+                        char c = '.';
+                        if (fighters.TryGetValue((y, x), out Fighter thing))
+                        {
+                            c = thing.C;
+                            hpsb.Append($" {c}({thing.HitPoints})");
+                        }
+                        else if (wall.Contains((y, x)))
+                            c = '#';
+                        sb.Append(c);
+                    }
+                    sb.Append("  " + hpsb.ToString() + '\n');
+                }
+                Console.WriteLine(sb.ToString());
+            }
+
+            Fighter FindOpponent(Fighter fighter)
+            {
+                Fighter bestOpponent = null;
+                foreach (var move in moves)
+                {
+                    (int, int) pos = (fighter.Position.y + move.dy, fighter.Position.x + move.dx);
+                    if (fighters.TryGetValue(pos, out Fighter opponent))
+                        if (opponent.C != fighter.C && (bestOpponent == null || opponent.HitPoints < bestOpponent.HitPoints))
+                            bestOpponent = opponent;
+                }
+                return bestOpponent;
+            }
+
+            (int y, int x) Move(Fighter fighter)
+            {
+                var beenThere = new HashSet<(int y, int x)>();
+                var queue = new Queue<((int y, int x) pos, int distance, (int y, int x) firstMove)>();
+
+                QueueOptions(fighter.Position);
+                beenThere.Add(fighter.Position);
+                (int y, int x)? bestOponentPos = null;
+                (int y, int x)? bestFirstMove = null;
+                int bestDistance = 0;
+                while (queue.Count > 0)
+                {
+                    var (pos, distance, firstMove) = queue.Dequeue();
+                    if (beenThere.Contains(pos))
+                        continue;
+                    if (bestFirstMove != null && distance != bestDistance)
+                        return bestFirstMove.Value;
+
+                    beenThere.Add(pos);
+                    if (wall.Contains(pos))
+                        continue;
+                    if (fighters.TryGetValue(pos, out Fighter opponent))
+                    {
+                        if (opponent.C == fighter.C)
+                            continue;
+                        if (distance == 1)
+                            return fighter.Position;
+                        if (bestFirstMove == null || pos.y < bestOponentPos.Value.y || (pos.y == bestOponentPos.Value.y && pos.x < bestOponentPos.Value.x) || firstMove.y < bestFirstMove.Value.y || (firstMove.y == bestFirstMove.Value.y && firstMove.x < bestFirstMove.Value.x))
+                        {
+                            bestOponentPos = pos;
+                            bestFirstMove = firstMove;
+                            bestDistance = distance;
+                        }
+                    }
+                    QueueOptions(pos, distance + 1, firstMove);
+                }
+                return bestFirstMove ?? fighter.Position;
+
+                void QueueOptions((int y, int x) pos, int newDistance = 1, (int y, int x)? firstMove = null)
+                {
+                    foreach (var move in moves)
+                    {
+                        (int, int) newPos = (pos.y + move.dy, pos.x + move.dx);
+                        Add(newPos, newDistance, firstMove);
+                    }
+                    void Add((int y, int x) newPos, int newDistance, (int y, int x)? firstMove)
+                        => queue.Enqueue((newPos, newDistance, firstMove ?? newPos));
+                }
+            }
         }
     }
-
-
 
     public class Fighter
     {
