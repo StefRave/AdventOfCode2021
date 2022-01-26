@@ -40,6 +40,7 @@ public class Day19 : IAdvent
 
     private void Execute(long[] registers, Instr instr)
     {
+#pragma warning disable CS0675 // Bitwise-or operator used on a sign-extended operand
         switch (instr.Opcode)
         {
             case Opcode.Addr: registers[instr[3]] = registers[instr[1]] + registers[instr[2]]; break;
@@ -59,6 +60,7 @@ public class Day19 : IAdvent
             case Opcode.Eqri: registers[instr[3]] = registers[instr[1]] == instr[2] ? 1 : 0; break;
             case Opcode.Eqrr: registers[instr[3]] = registers[instr[1]] == registers[instr[2]] ? 1 : 0; break;
         }
+#pragma warning restore CS0675 // Bitwise-or operator used on a sign-extended operand
     }
 
     public record TestInput(int[] Before, int[] Instr, int[] After);
