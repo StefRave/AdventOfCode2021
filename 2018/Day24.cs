@@ -16,11 +16,25 @@ public class Day24 : IAdvent
         var immuneSystem = Parse(input[0], "Immune System");
         var infections = Parse(input[1], "Infection");
 
-        for (int i = 1; immuneSystem.Any() && infections.Any(); i++)
+        (int immuneSystemUnitsLeft, int infectionUnitsLeft) = Fight(immuneSystem, infections);
+        Advent.AssertAnswer1(immuneSystemUnitsLeft + infectionUnitsLeft, 18532, 5216);
+
+        int boost = 0;
+        while (infectionUnitsLeft != 0)
+            (immuneSystemUnitsLeft, infectionUnitsLeft) = Fight(immuneSystem, infections, ++boost);
+
+        Advent.AssertAnswer1(immuneSystemUnitsLeft, 6523, 51);
+    }
+
+    static (int immuneSystemUnitsLeft, int infectionUnitsLeft) Fight(IReadOnlyList<Participant> immuneSystemStart, IReadOnlyList<Participant> infectionsStart, int immuneSystemBoost = 0)
+    {
+        var immuneSystem = immuneSystemStart.Select(p => p.Clone(immuneSystemBoost)).ToList();
+        var infections = infectionsStart.Select(p => p.Clone()).ToList();
+
+        bool damageDone = true;
+        while (damageDone)
         {
-            //Console.WriteLine($"======================");
-            //Console.WriteLine($"Round {i}");
-            //Print();
+            damageDone = false;
             var attackerAndAttacked =
                 GetDamagePerDefender(immuneSystem, infections)
                 .Union(GetDamagePerDefender(infections, immuneSystem))
@@ -31,57 +45,38 @@ public class Day24 : IAdvent
                 int dammage = attacker.GetInflictedDamageTo(targeted);
                 int killing = Math.Min(targeted.UnitCount, dammage / targeted.HitPoints);
 
-                //Console.WriteLine($"{attacker.Initiative}  {attacker.GroupType} group {attacker.GroupNumber} would deal defending group {targeted.GroupNumber} {dammage} killing {killing}");
                 targeted.UnitCount = targeted.UnitCount - killing;
+                if (killing > 0)
+                    damageDone = true;
             }
             immuneSystem = immuneSystem.Where(p => p.UnitCount > 0).ToList();
             infections = infections.Where(p => p.UnitCount > 0).ToList();
         }
         int unitsLeft = immuneSystem.Concat(infections).Sum(p => p.UnitCount);
-        Advent.AssertAnswer1(unitsLeft, 18532, 5216);
+        return (immuneSystem.Sum(p => p.UnitCount), infections.Sum(p => p.UnitCount));
+    }
 
+    static IEnumerable<(Participant attacker, Participant targeted)> GetDamagePerDefender(IReadOnlyList<Participant> attackers, IReadOnlyList<Participant> defenders)
+    {
+        var defendersLeft = defenders.ToHashSet();
 
-        IEnumerable<(Participant attacker, Participant targeted)> GetDamagePerDefender(IReadOnlyList<Participant> attackers, IReadOnlyList<Participant> defenders)
+        foreach (var attacker in attackers.OrderByDescending(g => (g.EffectivePower, g.Initiative)))
         {
-            var defendersLeft = defenders.ToHashSet();
+            var defender =
+                (
+                    from def in defendersLeft
+                    let dammage = attacker.GetInflictedDamageTo(def)
+                    where dammage > 0
+                    orderby dammage descending, def.EffectivePower descending, def.Initiative descending
+                    select def
+                ).FirstOrDefault();
+            if (defender == null)
+                continue;
 
-            foreach (var attacker in attackers.OrderByDescending(g => (g.EffectivePower, g.Initiative)))
-            {
-                var defender =
-                    (
-                        from def in defendersLeft
-                        let dammage = attacker.GetInflictedDamageTo(def)
-                        where dammage > 0
-                        orderby dammage descending, def.EffectivePower descending, def.Initiative descending
-                        select def
-                    ).FirstOrDefault();
-                if (defender == null)
-                    continue;
-
-                yield return (attacker, defender);
-                defendersLeft.Remove(defender);
-                if (defendersLeft.Count == 0)
-                    yield break;
-            }
-        }
-
-        void Print()
-        {
-            PrintGroup(immuneSystem);
-            PrintGroup(infections);
-            Console.WriteLine("");
-
-            void PrintGroup(IReadOnlyList<Participant> group)
-            {
-                if (group.Count == 0)
-                    return;
-                Console.WriteLine($"{group[0].GroupType}:");
-                for (int i = 0; i < group.Count; i++)
-                {
-                    Participant m = group[i];
-                    Console.WriteLine($"Group {i + 1} contains {m.UnitCount} units");
-                }
-            }
+            yield return (attacker, defender);
+            defendersLeft.Remove(defender);
+            if (defendersLeft.Count == 0)
+                yield break;
         }
     }
 
@@ -119,13 +114,13 @@ public class Day24 : IAdvent
 
     public class Participant
     {
-        public int GroupNumber { get; set; }
+        public int GroupNumber { get; }
         public string GroupType { get; }
         public int UnitCount { get; set; }
         public int HitPoints { get; }
         public IReadOnlyCollection<string> WeakTo { get; }
         public IReadOnlyCollection<string> ImmuneTo { get; }
-        public int AttackDamage { get; }
+        public int AttackDamage { get; private set; }
         public string DamageType { get; }
         public int Initiative { get; }
 
@@ -144,6 +139,12 @@ public class Day24 : IAdvent
             DamageType = damageType;
             Initiative = initiative;
         }
+
+        public Participant Clone(int boost = 0)
+        {
+            Participant clone = (Participant)MemberwiseClone();
+            clone.AttackDamage += boost;
+            return clone;
+        }
     }
 }
-
