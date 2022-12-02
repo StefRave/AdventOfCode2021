@@ -22,7 +22,7 @@ public class Day02 : IAdvent
     }
 
     private static Rps GetMyMove(Rps elf, RoundResult desiredResult) 
-        => (Rps)(((int)elf + 1 + (int)desiredResult % 3) % 3);
+        => (Rps)(((int)elf + 1 + (int)desiredResult) % 3);
 
     private static int DoRound(Rps elf, Rps me)
     {
