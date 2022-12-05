@@ -9,9 +9,9 @@ public class Day18 : IAdvent
 
       
 
-        Advent.AssertAnswer1(10, expected: 0, sampleExpected: 0);
+        Advent.AssertAnswer1(10, expected: 1, sampleExpected: 0);
 
      
-        Advent.AssertAnswer2(10, expected: 0, sampleExpected: 0);
+        Advent.AssertAnswer2(10, expected: 2, sampleExpected: 0);
     }
 }
