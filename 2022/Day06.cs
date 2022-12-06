@@ -4,14 +4,26 @@ public class Day06 : IAdvent
 {
     public void Run()
     {
-        var input = Advent.ReadInputLines()
-            .ToArray();
+        var input = Advent.ReadInputLines()[0];
 
-      
+        int answer1 = FindEndOfStartOfMessageMarker(input, 4);
+        Advent.AssertAnswer1(answer1, expected: 1760, sampleExpected: 7);
 
-        Advent.AssertAnswer1(10, expected: 1, sampleExpected: 0);
 
-     
-        Advent.AssertAnswer2(10, expected: 2, sampleExpected: 0);
+        int answer2 = FindEndOfStartOfMessageMarker(input, 14);
+        Advent.AssertAnswer2(answer2, expected: 2974, sampleExpected: 19);
+    }
+
+    private static int FindEndOfStartOfMessageMarker(string input, int markerLength)
+    {
+        int startIndex = 0;
+        for (; startIndex < input.Length - markerLength; startIndex++)
+        {
+            string startOfPacket = input.Substring(startIndex, markerLength);
+            if (startOfPacket.Distinct().Count() == markerLength)
+                break;
+        }
+        startIndex += markerLength;
+        return startIndex;
     }
 }
