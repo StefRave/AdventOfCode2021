@@ -1,5 +1,3 @@
-using AdventOfCode2022.Helpers;
-
 namespace AdventOfCode2022;
 
 public class Day07 : IAdvent
@@ -49,22 +47,10 @@ public class Day07 : IAdvent
             }
         }
 
-
-
-        long answer1 = dirSize
-            .Where(l => l.Value <= 100000)
-            .Select(l => l.Value).Sum();
+        long answer1 = dirSize.Where(l => l.Value <= 100000).Select(l => l.Value).Sum();
         Advent.AssertAnswer1(answer1, expected: 2031851, sampleExpected: 95437);
 
-        long answer2 = long.MaxValue;
-        long usedSpace = 70000000 - dirSize[""];
-        foreach (var (dir, size) in dirSize)
-        {
-            
-            long newUnusedSpace = usedSpace + dirSize[dir];
-            if (newUnusedSpace >= 30000000 && (size < answer2))
-                answer2 = size;
-        }
+        var answer2 = dirSize.Select(x => x.Value).Where(size => 70000000L - dirSize[""] + size >= 30000000L).Min();
         Advent.AssertAnswer2(answer2, expected: 2, sampleExpected: 24933642);
     }
 }
