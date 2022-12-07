@@ -16,14 +16,12 @@ public class Day06 : IAdvent
 
     private static int FindEndOfStartOfMessageMarker(string input, int markerLength)
     {
-        int startIndex = 0;
-        for (; startIndex < input.Length - markerLength; startIndex++)
+        for (int startIndex = 0; startIndex < input.Length - markerLength; startIndex++)
         {
             string startOfPacket = input.Substring(startIndex, markerLength);
             if (startOfPacket.Distinct().Count() == markerLength)
-                break;
+                return startIndex + markerLength;
         }
-        startIndex += markerLength;
-        return startIndex;
+        throw new Exception("Not found");
     }
 }
