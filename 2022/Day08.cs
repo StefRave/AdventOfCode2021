@@ -38,18 +38,19 @@ public class Day08 : IAdvent
         return answer1;
 
 
-        void Move((int y, int x) start, (int y, int x) delta, int previousHeight = -1)
+        void Move((int y, int x) start, (int y, int x) delta)
         {
+            int previousHeight = -1;
             var (y, x) = start;
 
-            if (y >= 0 && x >= 0 && x < input[0].Length && y < input.Length)
+            while (y >= 0 && x >= 0 && x < input[0].Length && y < input.Length)
             {
                 if (input[y][x] > previousHeight)
                     visible[y][x] = true;
                 if (previousHeight < input[y][x])
                     previousHeight = input[y][x];
 
-                Move((y + delta.y, x + delta.x), delta, previousHeight);
+                (y, x) = (y + delta.y, x + delta.x);
             }
         }
     }
