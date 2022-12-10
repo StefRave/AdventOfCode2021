@@ -1,3 +1,5 @@
+using AdventOfCode2022.Helpers;
+
 namespace AdventOfCode2022;
 
 public class Day09 : IAdvent
@@ -26,7 +28,7 @@ public class Day09 : IAdvent
     static int DoIt(Motion[] input, int tailLength)
     {
         var tailLocations = new HashSet<(int y, int x)>();
-        var rope = Enumerable.Repeat((y: 0, x: 0), tailLength + 1).ToArray();
+        var rope = Init.Array((y: 0, x: 0), tailLength + 1);
 
         foreach (var move in input)
         {
