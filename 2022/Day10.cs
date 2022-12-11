@@ -54,6 +54,6 @@ public class Day10 : IAdvent
 
         Advent.AssertAnswer1(total, expected: 14060, sampleExpected: 13140);
 
-        string answer2 = "PAPKFKEJ";
+        //string answer2 = "PAPKFKEJ";
     }
 }
