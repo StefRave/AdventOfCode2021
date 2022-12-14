@@ -18,7 +18,7 @@
             foreach (var item in ar)
                 field[item.y - ys][item.x - xs] = item.c;
 
-            foreach (var line in field.Reverse())
+            foreach (var line in field)
                 Console.WriteLine(new string(line));
             Console.WriteLine("");
         }
