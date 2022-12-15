@@ -7,60 +7,63 @@ public class Day15 : IAdvent
         var input = Advent.ReadInputLines()
             .Select(line => Regex.Matches(line, @"-?\d+").Select(m => m.Value).Select(int.Parse).ToArray())
             .Select(m => (s: (x: m[0], y: m[1]), b: (x: m[2], y: m[3])))
+            .OrderBy(m => m.s)
             .ToArray();
 
         var rowY = Advent.UseSampleData ? 10 : 2000000;
-
-        var (ranges, beaconCount) = DoIt(rowY);
-
-        int answer1 = ranges.Sum(r => r.end - r.start) - beaconCount;
+        var (impossiblePositions, xGap) = DoIt(rowY);
+        int beaconCount = input.Where(l => l.b.y == rowY).Select(l => l.b.x).Distinct().Count();
+        int answer1 = impossiblePositions - beaconCount;
         Advent.AssertAnswer1(answer1, expected: 5166077, sampleExpected: 26);
 
         long answer2 = 0;
         for (int y = 0; y < 4000000; y++)
         {
-            (ranges, _)  = DoIt(y);
-            if (ranges.Count != 1)
+            (_, xGap) = DoIt(y);
+            if (xGap.HasValue)
             {
-                int x = ranges[0].end;
-                answer2 = 4000000L * x + y;
+                answer2 = 4000000L * xGap.Value + y;
                 break;
             }
         }
         Advent.AssertAnswer2(answer2, expected: 13071206703981, sampleExpected: 56000011);
 
 
-        (List<(int start, int end)> mergedRanges, int beaconCount) DoIt(int rowY)
+        (int impossiblePositions, int? xGap) DoIt(int rowY, bool sort = false)
         {
-            var ranges =
-                from l in input
-                let extent = Math.Abs(l.s.y - l.b.y) + Math.Abs(l.s.x - l.b.x) - Math.Abs(l.s.y - rowY)
-                where extent > 0
-                orderby l.s.x - extent, l.s.x + extent
-                select (start: l.s.x - extent, end: l.s.x + extent + 1, l.b);
+            if (sort)
+                Array.Sort(input, (a, b) =>
+                    (a.s.x - Math.Abs(a.s.y - a.b.y) - Math.Abs(a.s.x - a.b.x) + Math.Abs(a.s.y - rowY)) -
+                    (b.s.x - Math.Abs(b.s.y - b.b.y) - Math.Abs(b.s.x - b.b.x) + Math.Abs(b.s.y - rowY)));
 
-            var beacons = new HashSet<int>();
-            foreach (var (start, end, b) in ranges)
+            (int start, int end) cur = (0,0);
+            int prevStart = 0;
+            bool first = true;
+            foreach (var l in input)
             {
-                if (b.y == rowY)
-                    beacons.Add(b.x);
-            }
+                var extent = Math.Abs(l.s.y - l.b.y) + Math.Abs(l.s.x - l.b.x) - Math.Abs(l.s.y - rowY);
+                if (extent < 0)
+                    continue;
 
-            var mergedRanges = new List<(int start, int end)>();
-            (int start, int end) cur = (int.MinValue, 0);
-            foreach (var r in ranges)
-            {
-                if (cur.start == int.MinValue || r.start > cur.end)
+                int start = l.s.x - extent;
+                int end = l.s.x + extent + 1;
+                if (first)
                 {
-                    if (cur.start != int.MinValue)
-                        mergedRanges.Add(cur);
-                    cur = (r.start, r.end);
+                    cur = (start, end);
+                    prevStart = start;
+                    first = false;
                 }
-                cur = (cur.start, Math.Max(cur.end, r.end));
-            }
-            mergedRanges.Add(cur);
+                prevStart = start;
+                if (start > cur.end)
+                {
+                    if (!sort)
+                        return DoIt(rowY, sort: true);
 
-            return (mergedRanges, beacons.Count);
+                    return (0, cur.end);
+                }
+                cur = (cur.start, Math.Max(cur.end, end));
+            }
+            return (cur.end - cur.start, null);
         }
     }
 }
