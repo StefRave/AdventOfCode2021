@@ -84,7 +84,7 @@ public class Day16 : IAdvent
 
             var bitmapped = list.Select(item => (s: item.s.Select(n => 1L << n).Sum(), total: item.total))
                 .OrderByDescending(item => item.total)
-                .Take(list.Count / 4)
+                .Take(list.Count / 1000)
                 .ToArray();
             int max = 0;
             for (int i = 0; i < bitmapped.Length - 1; i++)
