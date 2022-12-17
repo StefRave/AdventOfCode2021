@@ -8,118 +8,90 @@ public class Day17 : IAdvent
 
     public void Run()
     {
-        string rocksString = @"####
+        string rocksString = @"1111
 
-                                .#.
-                                ###
-                                .#.
+                                010
+                                111
+                                010
 
-                                ..#
-                                ..#
-                                ###
+                                001
+                                001
+                                111
 
-                                #
-                                #
-                                #
-                                #
+                                1
+                                1
+                                1
+                                1
 
-                                ##
-                                ##";
+                                11
+                                11";
 
         var input = Advent.ReadInput();
-
         var rocks = rocksString.SplitByDoubleNewLine()
             .Select(rock => rock.SplitByNewLine()
-                .Select(l =>
-                {
-                    string value = l.Trim().Replace('#', '1').Replace('.', '0').PadRight(6, '0');
-                    return Convert.ToInt32(value, 2);
-                }).ToArray())
+                .Select(l => Convert.ToInt32(l.Trim().PadRight(6, '0'), 2)).ToArray())
             .ToArray();
 
-        var field = Enumerable.Repeat(empty, 99).Concat(new[] { 0b111111111 }).ToArray();
-        long index = field.Length - 1;
-        Draw(field, index);
+        var field = new int[50000000];
+        field[^1] = 0b111111111;
+        int index = field.Length - 2;
 
-        long wi = 0;
+        int wi = 0;
         long rocknr;
-        long cleaned = 0;
-        long totalRocks = 0;
-        for (rocknr = 0; rocknr < 2022; rocknr++, totalRocks++)
-            DoIt(rocknr, ref wi);
+        for (rocknr = 0; rocknr != 2022; rocknr++)
+            DoIt(rocknr);
         
-        long answer1 = field.Where(l => l != empty).Count() + cleaned;
+        long answer1 = field.Length - 2 - index;
         Advent.AssertAnswer1(answer1, expected: 3149, sampleExpected: 3068);
 
-        Console.WriteLine(input.Length);
+        field = new int[50000000];
+        field[^1] = 0b111111111;
+        index = field.Length - 2;
+        wi = 0;
 
-
-        long prevCount = 0;
-        int repeatDelta = 0;
         long totalCount = 0;
-        List<long> deltas = new List<long>();
-        for (int j = 0; j < 1000 && repeatDelta == 0; j++)
+        int firstWi = 0;
+        long firstTotal = 0;
+        long totalRocks = 0;
+        bool first = true;
+        while (true)
         {
-            for (; rocknr < rocks.Length * input.Length; rocknr++, totalRocks++)
-                DoIt(rocknr, ref wi);
+            long until = ((totalRocks / rocks.Length / input.Length) + 1) * rocks.Length * input.Length;
+            for (; totalRocks < until; totalRocks++)
+                DoIt(totalRocks);
+            
+            totalCount = field.Length - 2 - index;
 
-            totalCount = field.Where(l => l != empty).Count() + cleaned;
-            deltas.Add(totalCount - prevCount);
-            if (deltas.Count > 10)
+            wi %= input.Length;
+            if (first)
             {
-                for (int i = 0; i < deltas.Count - 6; i++)
-                {
-                    if (deltas.Skip(deltas.Count - 5).SequenceEqual(deltas.Skip(i).Take(5)))
-                    {
-                        repeatDelta = deltas.Count - i - 5;
-                        break;
-                    }
-                }
+                first = false;
+                firstWi = wi;
+                firstTotal = totalCount;
             }
-
-            prevCount = totalCount;
-            rocknr = 0;
-
-            Console.WriteLine($"{j,-3} {totalCount,-10:D}  {totalRocks}  {wi % input.Length}");
+            else if (firstWi == wi)
+                break;
         }
-        long repeateRows = deltas.Skip(deltas.Count - repeatDelta).Sum();
-        long repeatRocks = repeatDelta * rocks.Length * input.Length;
-        Console.WriteLine($"{repeateRows}    {repeatRocks}");
+        long repeateRows = totalCount - firstTotal;
+        long repeatRocks = totalRocks - rocks.Length * input.Length;
 
         long endAt = 1000000000000;
-        long add = (endAt - totalRocks) / (repeatRocks);
-        totalCount += add * repeateRows;
-        cleaned += add * repeateRows;
-        totalRocks += add * (repeatRocks);
+        long add = (endAt - totalRocks) / repeatRocks;
+        totalRocks += add * repeatRocks;
 
 
-        Console.WriteLine($"{totalRocks}");
 
         for (; totalRocks < endAt; totalRocks++)
-            DoIt(totalRocks, ref wi);
+            DoIt(totalRocks);
 
-        long answer2 = field.Where(l => l != empty).Count() + cleaned;
+        long answer2 = field.Length - 2 - index + add * repeateRows;
         Advent.AssertAnswer2(answer2, expected: 1553982300884, sampleExpected: 1514285714288);
 
 
-        void DoIt(long ri, ref long wi)
+        void DoIt(long ri)
         {
             var rock = rocks[ri % rocks.Length];
-            while (field[index % field.Length] != empty)
-                index = (index - 1) % field.Length + field.Length;
-            
-            int el = (int)(index % field.LongLength + field.LongLength);
-            for (int i = 1; i < rock.Length + 5; i++)
-            {
-                el--;
-                if (field[el % field.Length] != empty)
-                {
-                    if (cleaned != 0 || field[el % field.Length] != 0b111111111)
-                        cleaned++;
-                    field[el % field.Length] = empty;
-                }
-            }
-            int rockDown = el + 2;
+            int rockDown = index - rock.Length - 2;
 
             int windOffset = 0;
             while (true)
@@ -129,7 +101,8 @@ public class Day17 : IAdvent
                 for (int i = 0; i < rock.Length; i++)
                 {
                     int movedRockLine = ((rock[i] << 8) >> (8 + windOffset + addOffset));
-                    if ((movedRockLine & field[(rockDown + i) % field.Length]) != 0)
+                    int v = field[(rockDown + i)] | empty;
+                    if ((movedRockLine & v) != 0)
                     {
                         canMoveByWind = false;
                         break;
@@ -142,7 +115,7 @@ public class Day17 : IAdvent
                 for (int i = 0; i < rock.Length; i++)
                 {
                     int movedRockLine = (rock[i] << 8) >> (8 + windOffset);
-                    if ((movedRockLine & field[(rockDown + i + 1) % field.Length]) != 0)
+                    if ((movedRockLine & field[rockDown + i + 1]) != 0)
                     {
                         canFall = false;
                         break;
@@ -152,24 +125,25 @@ public class Day17 : IAdvent
                     break;
                 rockDown++;
             }
+            index = Math.Min(rockDown - 1, index);
             for (int i = 0; i < rock.Length; i++)
             {
                 int movedRockLine = (rock[i] << 8) >> (8 + windOffset);
-                field[(rockDown + i) % field.Length] |= movedRockLine;
+                field[rockDown + i] |= movedRockLine;
             }
         }
     }
 
-    static void Draw(int[] field, long index)
+    static void Draw(int[] field, int index)
     {
-        for (int i = 0; i < 17; i++)
-            Console.WriteLine(Visualize(field[(i + index - 4) % field.Length]));
+        for (int i = index - 3; i < Math.Min(field.LongLength, index + 17); i++)
+            Console.WriteLine(Visualize(field[(i)]));
         Console.WriteLine();
      
         
         static string Visualize(int l, char to = '#')
         {
-            return Convert.ToString(l, 2).PadLeft(7, '.').Replace('1', to).Replace('0', '.');
+            return Convert.ToString(l | empty, 2).PadLeft(7, '.').Replace('1', to).Replace('0', '.');
         }
     }
 }
