@@ -24,12 +24,12 @@ public class Day18 : IAdvent
             grid[line.X, line.Y, line.Z] = true;
 
 
-        int answer1 = Count() * 2;
+        int answer1 = Count();
         Advent.AssertAnswer1(answer1, expected: 3550, sampleExpected: 64);
 
 
         Fill();
-        int answer2 = Count() * 2;
+        int answer2 = Count();
         Advent.AssertAnswer2(answer2, expected: 2028, sampleExpected: 58);
 
 
@@ -38,50 +38,18 @@ public class Day18 : IAdvent
         {
             int count = 0;
             for (int x = 0; x <= max.X; x++)
-            {
                 for (int y = 0; y <= max.Y; y++)
-                {
-                    bool free = true;
                     for (int z = 0; z <= max.Z; z++)
-                    {
                         if (grid[x, y, z])
-                            if (free)
+                        {
+                            if (x == 0 || !grid[x - 1, y, z])
                                 count++;
-                        free = !grid[x, y, z];
-                    }
-                }
-            }
-
-            for (int z = 0; z <= max.Z; z++)
-            {
-                for (int x = 0; x <= max.X; x++)
-                {
-                    bool free = true;
-                    for (int y = 0; y <= max.Y; y++)
-                    {
-                        if (grid[x, y, z])
-                            if (free)
+                            if (y == 0 || !grid[x, y - 1, z])
                                 count++;
-                        free = !grid[x, y, z];
-                    }
-                }
-            }
-
-            for (int y = 0; y <= max.Y; y++)
-            {
-                for (int z = 0; z <= max.Z; z++)
-                {
-                    bool free = true;
-                    for (int x = 0; x <= max.X; x++)
-                    {
-                        if (grid[x, y, z])
-                            if (free)
+                            if (z == 0 || !grid[x, y, z - 1])
                                 count++;
-                        free = !grid[x, y, z];
-                    }
-                }
-            }
-            return count;
+                        }
+            return count * 2;
         }
 
         void Fill()
