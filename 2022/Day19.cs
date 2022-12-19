@@ -2,8 +2,15 @@ namespace AdventOfCode2022;
 
 public class Day19 : IAdvent
 {
-    record M(int o, int c, int b, int g);
-    
+    record M(int O, int C, int B, int G)
+    {
+        public static M operator +(M a, M b) => new(a.O + b.O, a.C + b.C, a.B + b.B, a.G + b.G);
+        public static M operator -(M a, M b) => new(a.O - b.O, a.C - b.C, a.B - b.B, a.G - b.G);
+        public static bool operator <=(M a, M b) => a.O <= b.O && a.C <= b.C && a.B <= b.B && a.G <= b.G;
+        public static bool operator >=(M a, M b) => a.O >= b.O && a.C >= b.C && a.B >= b.B && a.G >= b.G;
+    }
+    static readonly M[] RobotType = new M[] { new (1, 0, 0, 0), new (0, 1, 0, 0), new (0, 0, 1, 0), new (0, 0, 0, 1) };
+
     public void Run()
     {
         // Blueprint 0: Each ore robot costs 1 ore.  Each clay robot costs 2 ore.  Each obsidian robot costs 3 ore and 4  clay.  Each geode robot costs 5 ore and 6 obsidian.
@@ -38,10 +45,10 @@ public class Day19 : IAdvent
         Advent.AssertAnswer2(answer2, expected: 37367, sampleExpected: 3348);
     }
 
-    private int DoIt(M[] bluePrint, int totalMinutes)
+    private static int DoIt(M[] bluePrint, int totalMinutes)
     {
         var todo = new Queue<(M robots, M resources)>();
-        todo.Enqueue((new M(1, 0, 0, 0), new M(0, 0, 0, 0 )));
+        todo.Enqueue((new M(O: 1, C: 0, B: 0, G: 0), new M(0, 0, 0, 0 )));
 
         for (int minute = 1; minute <= totalMinutes; minute++)
         {
@@ -49,22 +56,20 @@ public class Day19 : IAdvent
             while (todo.Count > 0)
             {
                 var (robots, resources) = todo.Dequeue();
-                var newResources = new M(resources.o + robots.o, resources.c + robots.c, resources.b + robots.b, resources.g + robots.g);
-                // do nothing
-                todoNew.Enqueue((robots, newResources));
+                var newResources = resources + robots;
+
                 for (int i = 0; i < bluePrint.Length; i++)
-                {
-                    var bp = bluePrint[i];
-                    if (bp.o <= resources.o && bp.c <= resources.c && bp.b <= resources.b && bp.g <= resources.g)
-                        todoNew.Enqueue(
-                            (new M(robots.o + (i == 0 ? 1 : 0), robots.c + (i == 1 ? 1 : 0), robots.b + (i == 2 ? 1 : 0), robots.g + (i == 3 ? 1 : 0)),
-                            new M(newResources.o - bp.o, newResources.c - bp.c, newResources.b - bp.b, newResources.g)));
-                }
+                    if (bluePrint[i] <= resources)
+                        todoNew.Enqueue((robots + RobotType[i], newResources - bluePrint[i]));
+                // Also add: do nothing
+                todoNew.Enqueue((robots, newResources));
             }
-            todo = new Queue<(M robots, M resources)>(todoNew.OrderByDescending(m => m.resources.g).ThenByDescending(m => m.robots.g)
-                .ThenByDescending(m => m.resources.b).ThenByDescending(m => m.robots.b).ThenByDescending(m => m.robots.c).Take(5000));
+            todo = new Queue<(M robots, M resources)>(todoNew
+                .OrderByDescending(m => m.resources.G).ThenByDescending(m => m.robots.G)
+                .ThenByDescending(m => m.resources.B).ThenByDescending(m => m.robots.B)
+                .ThenByDescending(m => m.resources.C).ThenByDescending(m => m.robots.C)
+                .Take(5000));
         }
-        int maxQ = todo.Select(m => m.resources.g).Max();
-        return maxQ;
+        return todo.Select(m => m.resources.G).Max();
     }
 }
