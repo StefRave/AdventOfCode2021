@@ -18,8 +18,8 @@ public class Options
 
 public class Advent
 {
-    public static string Day;
-    public static bool UseSampleData;
+    public static string Day { get; private set; }
+    public static bool UseSampleData { get; private set; }
 
     public static void Main(string[] args)
     {
