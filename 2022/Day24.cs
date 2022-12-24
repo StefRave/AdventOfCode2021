@@ -1,6 +1,7 @@
 using Microsoft.VisualBasic;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Numerics;
 
 namespace AdventOfCode2022;
 
@@ -33,13 +34,18 @@ public class Day24 : IAdvent
         int minY = field.Select(m => m.Key.Y).Min();
         int maxY = field.Select(m => m.Key.Y).Max();
 
-        var allWindPos = GetAllWindPositions();
+        Dictionary<V2, char>[] allWindPos = GetAllWindPositions();
+        V2 entrance = new V2(1, 0);
+        V2 exit = new V2(maxX - 1, maxY);
+        int iteration = 0;
+        
+        DoIt(entrance, exit);
+        Advent.AssertAnswer1(iteration, expected: 322, sampleExpected: 18);
 
-        int answer1 = DoIt(totalTrips: 1);
-        Advent.AssertAnswer1(answer1, expected: 322, sampleExpected: 18);
 
-        int answer2 = DoIt(totalTrips: 3);
-        Advent.AssertAnswer2(answer2, expected: 974, sampleExpected: 54);
+        DoIt(exit, entrance);
+        DoIt(entrance, exit);
+        Advent.AssertAnswer2(iteration, expected: 974, sampleExpected: 54);
 
 
         (V2 p, char c)[] IterateWind((V2 p, char c)[] wind)
@@ -56,29 +62,20 @@ public class Day24 : IAdvent
             }).ToArray();
         }
 
-        int DoIt(int totalTrips = 1)
+        int DoIt(V2 current, V2 goal)
         {
-            V2 entrance = new V2(1, 0);
-            V2 exit = new V2(maxX - 1, maxY);
+            var queue = new Queue<V2>();
+            queue.Enqueue(current);
 
-            var queue = new Queue<(V2 p, int trip, V2 goal)>();
-            queue.Enqueue((entrance, 0, exit));
-
-            for (int iteration = 0; iteration < 10000; iteration++)
+            while (true)
             {
-                var windPos = allWindPos[iteration % allWindPos.Length];
-                var newQueue = new Queue<(V2 e, int t, V2 goal)>();
+                var windPos = allWindPos[(iteration + 1) % allWindPos.Length];
+                var newQueue = new Queue<V2>();
                 while (queue.Count > 0)
                 {
-                    var (pos, trip, currentGoal) = queue.Dequeue();
-                    if (pos == currentGoal)
-                    {
-                        trip++;
-                        if (trip == totalTrips)
-                            return iteration - 1;
-
-                        currentGoal = currentGoal == entrance ? exit : entrance;
-                    }
+                    var pos = queue.Dequeue();
+                    if (pos == goal)
+                        return iteration;
 
                     foreach (var m in MoveD)
                     {
@@ -89,20 +86,22 @@ public class Day24 : IAdvent
                             continue;
 
                         if (!windPos.ContainsKey(ne) && !field.ContainsKey(ne))
-                            newQueue.Enqueue((ne, trip, currentGoal));
+                            newQueue.Enqueue(ne);
                     }
                 }
-                queue = new Queue<(V2, int, V2)>(newQueue
+                queue = new Queue<V2>(newQueue
                     .Distinct()
-                    .OrderByDescending(p => p.t * 1000 + ((p.goal == exit) ? (p.e.X + p.e.Y) : (999 - p.e.X - p.e.Y)))
+                    .OrderByDescending(p => (goal == exit) ? (p.X + p.Y) : (999 - p.X - p.Y))
                     .Take(50));
+                iteration += 1;
             }
-            return -1;
         }
 
         Dictionary<V2, char>[] GetAllWindPositions()
         {
-            var allWindPos = new Dictionary<V2, char>[(maxX - minX - 1) * (maxY - minY - 1)];
+            int sX = (maxX - minX - 1);
+            int sY = (maxY - minY - 1);
+            var allWindPos = new Dictionary<V2, char>[sX * sY / (int)BigInteger.GreatestCommonDivisor(sX, sY)];
             for (int i = 0; i < allWindPos.Length; i++)
             {
                 Dictionary<V2, char> dw = (
