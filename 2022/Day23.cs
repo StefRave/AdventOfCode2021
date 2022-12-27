@@ -34,11 +34,8 @@ public class Day23 : IAdvent
             .ToHashSet();
 
         int iteration;
-        int directionIndex = 0;
-        bool relativePositionsChanged = false;
-
         for (iteration = 0; iteration < 10; iteration++)
-            (field, relativePositionsChanged) = DoIteration(field, directionIndex++);
+            (field, _) = DoIteration(field, iteration);
 
         int minX = field.Select(m => m.X).Min();
         int maxX = field.Select(m => m.X).Max();
@@ -47,17 +44,16 @@ public class Day23 : IAdvent
         int answer1 = (maxX - minX + 1) * (maxY - minY + 1) - field.Count;
         Advent.AssertAnswer1(answer1, expected: 4082, sampleExpected: 110);
 
-
-        for (; relativePositionsChanged; iteration++)
-            (field, relativePositionsChanged) = DoIteration(field, directionIndex++);
+        bool moveMade = true;
+        while (moveMade)
+            (field, moveMade) = DoIteration(field, iteration++);
         Advent.AssertAnswer2(iteration, expected: 1065, sampleExpected: 20);
     }
 
-    private static (HashSet<V2> newField, bool relativePositionsChanged) DoIteration(HashSet<V2> field, int directionIndex)
+    private static (HashSet<V2> newField, bool noMove) DoIteration(HashSet<V2> field, int directionIndex)
     {
-        bool relativePositionsChanged = false;
+        bool allAlone = true;
         Dictionary<V2, V2> newField = new();
-        V2 lastMove = null;
         foreach (V2 elve in field)
         {
             bool alone = Adjecent.All(c => !field.Contains(elve + c));
@@ -66,17 +62,12 @@ public class Day23 : IAdvent
                 newField.Add(elve, elve);
                 continue;
             }
+            allAlone = false;
             V2[] move = Nswe.Skip(directionIndex % 4).Take(4).FirstOrDefault(l => l.All(c => !field.Contains(elve + c)));
             if (move == null)
-            {
                 newField.Add(elve, elve);
-                continue;
-            }
-            newField.Add(elve, elve + move[1]);
-            if (lastMove == null)
-                lastMove = move[1];
-            else if (lastMove != move[1])
-                relativePositionsChanged = true;
+            else
+                newField.Add(elve, elve + move[1]);
         }
 
         bool hasDuplicates;
@@ -97,6 +88,6 @@ public class Day23 : IAdvent
         while (hasDuplicates);
 
 
-        return (new HashSet<V2>(newField.Values), relativePositionsChanged);
+        return (new HashSet<V2>(newField.Values), !allAlone);
     }
 }
