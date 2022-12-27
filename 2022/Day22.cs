@@ -1,4 +1,4 @@
-using System.Drawing;
+using System.IO;
 
 namespace AdventOfCode2022;
 
@@ -87,71 +87,59 @@ public class Day22 : IAdvent
                 if (IsInMaze(newPos))
                     return (newPos, facing);
 
-                var (pLeft, facingLeft, distLeft) = DoItLeftRight(p, facing, left: true);
-                var (pRigh, facingRigh, distRigh) = DoItLeftRight(p, facing, left: false);
-
-                if (distLeft < distRigh)
-                    return (pLeft, facingLeft);
-                return (pRigh, facingRigh);
+                return MoveNearEdge(p, facing);
 
 
-                (V2 p, int facing, int dist) DoItLeftRight(V2 p, int facing, bool left)
+                (V2 p, int facing) MoveNearEdge(V2 p, int facing)
                 {
-                    int turnExtra = left ? 0 : 2;
-                    bool foldFound = false;
-                    facing = (facing + 3 + turnExtra) % 4;
-                    int dist = 0;
-                    int distAdd = 1;
-                    int totalDistance = 0;
-                    string path = "";
+                    var direction = new Vector3(1, 0, 0);
+                    var normal = new Vector3(0, 0, 1);
+                    var start = new Vector3(0, 0, 0);
+                    var pos = start;
+
+                    facing = (facing + 1) % 4;
                     do
                     {
-                        totalDistance++;
-                        dist += distAdd;
+                        pos = pos + direction;
 
                         int quadrantOld = p.Y / cubeSideSize * 10 + p.X / cubeSideSize;
                         p = p + MoveD[facing];
 
                         bool posIn = IsInMaze(p);
-                        bool trackIn = IsInMaze(p + MoveD[(facing + 1 + turnExtra) % 4]);
+                        bool trackIn = IsInMaze(p + MoveD[(facing + 3) % 4]);
                         if (posIn && !trackIn)
                         {
                             int quadrantNew = p.Y / cubeSideSize * 10 + p.X / cubeSideSize;
                             if (quadrantNew != quadrantOld)
-                                path += "-";
+                            {
+                                (direction, normal) = CubeMoveStraightCorner(direction, normal);
+                                pos = pos + direction;
+                            }
                         }
                         else if (trackIn)
                         {
-                            dist -= distAdd;
-                            facing = (facing + 1 + turnExtra) % 4;
-                            distAdd = -1;
+                            facing = (facing + 3) % 4;
                             p = p + MoveD[facing];
-                            foldFound = true;
-                            path += "c";
+                            (direction, normal) = CubeMoveClosedCorner(direction, normal);
+                            pos = pos + direction;
                         }
                         else
                         {
-                            dist -= distAdd;
-                            bool outSide = p.X < 0 || p.X >= maxX || p.Y < 0 || p.Y >= maxY;
                             p = p - MoveD[facing]; // move back
-                            facing = (facing + 3 + turnExtra) % 4;
-                            distAdd = foldFound & outSide ? -1 : 1;
-                            if (!foldFound || outSide)
-                                dist += distAdd;
-                            path += "o";
+                            facing = (facing + 1) % 4;
+                            (direction, normal) = CubeMoveOpenCorner(direction, normal);
+                            pos = pos + direction;
                         }
                     }
-                    while (dist > 0 && totalDistance < cubeSideSize * 8);
-                    facing = (facing + 3 + turnExtra) % 4;
+                    while (pos != start);
+                    facing = (facing + 1) % 4;
 
-                    if (path == "oco")
-                        totalDistance = 1000;
-                    return (p, facing, totalDistance);
+                    return (p, facing);
                 }
             }
 
             bool IsInMaze(V2 p) => (p.X >= 0) && (p.Y >= 0) && (p.X < maxX) && (p.Y < maxY) && maze[p] != ' ';
-
+             
             (V2, int) MovePart1(V2 p)
             {
                 V2 newPos = p;
@@ -170,6 +158,75 @@ public class Day22 : IAdvent
                 while (maze[newPos] == ' ');
                 return (newPos, facing);
             }
+        }
+    }
+
+    static (Vector3 m, Vector3 n) CubeMoveClosedCorner(Vector3 m, Vector3 n)
+    {
+        if (m.X != 0)
+            n = n.RotateX(90 * m.X);
+        else if (m.Y != 0)
+            n = n.RotateY(90 * m.Y);
+        else
+            n = n.RotateZ(90 * m.Z);
+        return (m.Reverse(), n);
+    }
+
+    static (Vector3 m, Vector3 n) CubeMoveOpenCorner(Vector3 m, Vector3 n)
+    {
+        if (n.X != 0)
+            return (m.RotateX(-90 * n.X), n);
+        else if (n.Y != 0)
+            return (m.RotateY(-90 * n.Y), n);
+        else
+            return (m.RotateZ(-90 * n.Z), n);
+    }
+
+    static (Vector3 m, Vector3 n) CubeMoveStraightCorner(Vector3 m, Vector3 n)
+    {
+        return (n, m.Reverse());
+    }
+
+    public record Vector3(int X, int Y, int Z)
+    {
+        public int Length() => X * X + Y * Y + Z * Z;
+        public int ManhattanDistance() => Math.Abs(X) + Math.Abs(Y) + Math.Abs(Z);
+
+        public static Vector3 operator -(Vector3 a, Vector3 b) => new Vector3(a.X - b.X, a.Y - b.Y, a.Z - b.Z);
+        public static Vector3 operator +(Vector3 a, Vector3 b) => new Vector3(a.X + b.X, a.Y + b.Y, a.Z + b.Z);
+
+        public static (int cos, int sin) GetRotationValues(int angle)
+        {
+            angle = angle % 360;
+            angle = angle < 0 ? angle + 360 : angle;
+            return angle switch
+            {
+                0 => (1, 0),
+                90 => (0, 1),
+                180 => (-1, 0),
+                270 => (0, -1),
+                _ => throw new ArgumentException("Rotation must be a multiple of 90 degrees.")
+            };
+        }
+
+        public Vector3 Reverse() => new Vector3(-X, -Y, -Z);
+
+        public Vector3 RotateX(int angle)
+        {
+            (int cos, int sin) = GetRotationValues(angle);
+            return new Vector3(X, Y * cos - Z * sin, Y * sin + Z * cos);
+        }
+
+        public Vector3 RotateY(int angle)
+        {
+            (int cos, int sin) = GetRotationValues(angle);
+            return new Vector3(Z * sin + X * cos, Y, Z * cos - X * sin);
+        }
+
+        public Vector3 RotateZ(int angle)
+        {
+            (int cos, int sin) = GetRotationValues(angle);
+            return new Vector3(X * cos - Y * sin, X * sin + Y * cos, Z);
         }
     }
 }
