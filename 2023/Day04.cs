@@ -12,8 +12,8 @@ public class Day04 : IAdvent
                 var data = line.Split(':')[1];
                 var groups = data.Split('|');
                 return new Card(
-                    Regex.Matches(groups[0], @"\d+").Select(m => int.Parse(m.Value)).ToHashSet(),
-                    Regex.Matches(groups[1], @"\d+").Select(m => int.Parse(m.Value)).ToArray());
+                    groups[0].GetNumbers().ToHashSet(),
+                    groups[1].GetNumbers());
             })
             .ToArray();
 
