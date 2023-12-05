@@ -17,13 +17,13 @@ public class Day04 : IAdvent
             })
             .ToArray();
 
-        int[] matchesPerCard = input.Select(card => card.Numbers.Count(n => card.Winning.Contains(n))).ToArray();
-        int answer1 = matchesPerCard.Sum(m => m == 0 ? 0 : (int)Math.Pow(2, m - 1));
+        int[] matchesPerCard = [..input.Select(card => card.Numbers.Count(n => card.Winning.Contains(n)))];
+        int answer1 = matchesPerCard.Sum(m => (int)Math.Pow(2, m - 1));
         
         Advent.AssertAnswer1(answer1, expected: 22488, sampleExpected: 13);
 
 
-        int[] timesToProcess = Enumerable.Repeat(1, input.Length).ToArray();
+        int[] timesToProcess = [..Enumerable.Repeat(1, input.Length)];
         int total = 0;
         for (int i = 0; i < input.Length; i++)
         {

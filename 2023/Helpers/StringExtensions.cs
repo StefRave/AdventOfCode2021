@@ -9,4 +9,7 @@ public static class StringExtensions
 
     public static int[] GetNumbers(this string line)
         => Regex.Matches(line, @"\d+").Select(m => int.Parse(m.Value)).ToArray();
+
+    public static long[] GetLongs(this string line)
+        => Regex.Matches(line, @"\d+").Select(m => long.Parse(m.Value)).ToArray();
 }
