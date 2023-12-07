@@ -5,37 +5,22 @@ public class Day07 : IAdvent
     class Hand
     {
         private string card;
-        public string Cards { get => card; set { card = value; SortValue1 = CalcSortValue1(value); SortValue2 = CalcSortValue2(value); } }
+        public string Cards { get => card; set { card = value; SortValue1 = CalcSortValue(value, part: 1); SortValue2 = CalcSortValue(value, part: 2); } }
+        public int BidAmount { get; set; }
         public string SortValue1 { get; private set; }
         public string SortValue2 { get; private set; }
 
-        private string CalcSortValue1(string value)
+        private string CalcSortValue(string value, int part)
         {
-            char[] cards = value.ToCharArray();
-            Array.Sort(cards);
-            var ofAKind = new List<int>();
-            char current = '\0';
-            int countCurrent = 0;
-            foreach (var c in cards)
-            {
-                if (current == c)
-                    countCurrent++;
-                else
-                {
-                    if (countCurrent > 0)
-                        ofAKind.Add(countCurrent);
-                    countCurrent = 1;
-                }
-                current = c;
-            }
-            ofAKind.Add(countCurrent);
-            ofAKind.Add(0);
-            ofAKind.Sort((a, b) => b.CompareTo(a));
-
+            var cardCount = value.GroupBy(c => c).ToDictionary(c => c.Key, c => c.Count());
+            cardCount.TryGetValue('J', out int jokers);
+            if (part == 2 && jokers > 0 && jokers != 5)
+                cardCount.Remove('J');
+            var countOrder = cardCount.Select(kv => kv.Value).OrderByDescending(c => c).ToArray();
+            if (part == 2 && jokers != 5)
+                countOrder[0] += jokers;
             var sv = new char[6];
-            if (Cards == "KKAAK")
-                1.ToString();
-            sv[0] = (ofAKind[0], ofAKind[1]) switch
+            sv[0] = (countOrder[0], countOrder.Skip(1).FirstOrDefault()) switch
             {
                 (5, _) => '6',
                 (4, _) => '5',
@@ -52,78 +37,13 @@ public class Day07 : IAdvent
                     'A' => 'E',
                     'K' => 'D',
                     'Q' => 'C',
-                    'J' => 'B',
+                    'J' => part == 2 ? '!' : 'B',
                     'T' => 'A',
                     _ => value[i]
                 };
             }
             return new string(sv);
         }
-        
-        private string CalcSortValue2(string value)
-        {
-            char[] cards = value.ToCharArray();
-            Array.Sort(cards);
-            var ofAKind = new List<int>();
-            char current = '\0';
-            int countCurrent = 0;
-            int jokers = 0;
-            foreach (var c in cards)
-            {
-                if (c == 'J')
-                {
-                    if (countCurrent > 0)
-                        ofAKind.Add(countCurrent);
-                    countCurrent = 0;
-                    jokers++;
-                }
-                else
-                {
-                    if (current == c)
-                        countCurrent++;
-                    else
-                    {
-                        if (countCurrent > 0)
-                            ofAKind.Add(countCurrent);
-                        countCurrent = 1;
-                    }
-                }
-                current = c;
-            }
-            if (current != 'J')
-                ofAKind.Add(countCurrent);
-            while (ofAKind.Count < 2)
-                ofAKind.Add(0);
-            ofAKind.Sort((a, b) => b.CompareTo(a));
-            ofAKind[0] += jokers;
-
-            var sv = new char[6];
-            sv[0] = (ofAKind[0], ofAKind[1]) switch
-            {
-                (5, _) => '6',
-                (4, _) => '5',
-                (3, 2) => '4',
-                (3, _) => '3',
-                (2, 2) => '2',
-                (2, _) => '1',
-                _ => '0',
-            };
-            for (int i = 0; i < value.Length; i++)
-            {
-                sv[i + 1] = value[i] switch
-                {
-                    'A' => 'E',
-                    'K' => 'D',
-                    'Q' => 'C',
-                    'J' => '!',
-                    'T' => 'A',
-                    _ => value[i]
-                };
-            }
-            return new string(sv);
-        }
-
-        public int BidAmount { get; set;  }
     }
 
     public void Run()
@@ -136,16 +56,10 @@ public class Day07 : IAdvent
             })
             .ToArray();
 
-        Array.Sort(input, (a, b) => a.SortValue1.CompareTo(b.SortValue1));
-        long answer1 = 0;
-        for (int i = 0; i < input.Length; i++)
-            answer1 += (i + 1) * input[i].BidAmount;
+        long answer1 = input.OrderBy(h => h.SortValue1).Select((h, i) => (i + 1L) * h.BidAmount).Sum();
         Advent.AssertAnswer1(answer1, expected: 253954294, sampleExpected: 6440);
 
-        Array.Sort(input, (a, b) => a.SortValue2.CompareTo(b.SortValue2));
-        long answer2 = 0;
-        for (int i = 0; i < input.Length; i++)
-            answer2 += (i + 1) * input[i].BidAmount;
+        long answer2 = input.OrderBy(h => h.SortValue2).Select((h, i) => (i + 1L) * h.BidAmount).Sum();
         Advent.AssertAnswer2(answer2, expected: 254837398, sampleExpected: 5905);
     }
 }
