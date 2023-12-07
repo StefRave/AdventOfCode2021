@@ -19,30 +19,27 @@ public class Day07 : IAdvent
             var countOrder = cardCount.Select(kv => kv.Value).OrderByDescending(c => c).ToArray();
             if (part == 2 && jokers != 5)
                 countOrder[0] += jokers;
-            var sv = new char[6];
-            sv[0] = (countOrder[0], countOrder.Skip(1).FirstOrDefault()) switch
+
+            char handStrength = countOrder switch
             {
-                (5, _) => '6',
-                (4, _) => '5',
-                (3, 2) => '4',
-                (3, _) => '3',
-                (2, 2) => '2',
-                (2, _) => '1',
+                [5] => '6',
+                [4, ..] => '5',
+                [3, 2] => '4',
+                [3, ..] => '3',
+                [2, 2, ..] => '2',
+                [2, ..] => '1',
                 _ => '0',
             };
-            for (int i = 0; i < value.Length; i++)
-            {
-                sv[i + 1] = value[i] switch
+            var cardStrength = value.Select(c => c switch
                 {
                     'A' => 'E',
                     'K' => 'D',
                     'Q' => 'C',
                     'J' => part == 2 ? '!' : 'B',
                     'T' => 'A',
-                    _ => value[i]
-                };
-            }
-            return new string(sv);
+                    _ => c
+                });
+            return new string([handStrength, ..cardStrength]);
         }
     }
 
