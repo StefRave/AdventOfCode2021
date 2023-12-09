@@ -1,3 +1,4 @@
+
 namespace AdventOfCode2023;
 
 public class Day09 : IAdvent
@@ -8,32 +9,24 @@ public class Day09 : IAdvent
             .Select(line => line.GetLongs())
             .ToArray();
 
-        long answer1 = 0;
-        long answer2 = 0;
-        foreach (var line in input)
-        {
-            var list = new List<long[]>();
-            var numbers = line;
-            while (!numbers.All(n => n == 0))
-            {
-                list.Add(numbers);
-                var newNumbers = new long[numbers.Length - 1];
-                for (int i = 0; i < newNumbers.Length; i++)
-                    newNumbers[i] = numbers[i + 1] - numbers[i];
-                numbers = newNumbers;
-            }
-            long last = 0;
-            long first = 0;
-            foreach (var num in list.ToArray().Reverse())
-            {
-                last = num[^1] + last;
-                first = num[0] - first; 
-            }
-
-            answer1 += last;
-            answer2 += first;
-        }
+        var answer1 = input.Select(line => DoIt(line, part: 1)).Sum();
         Advent.AssertAnswer1(answer1, expected: 1930746032, sampleExpected: 114);
+        
+        var answer2 = input.Select(line => DoIt(line, part: 2)).Sum();
         Advent.AssertAnswer2(answer2, expected: 1154, sampleExpected: 2);
+    }
+
+    private long DoIt(long[] line, int part)
+    {
+        if (line.All(v => v == 0))
+            return 0;
+
+        long[] l = new long[line.Length - 1];
+        for (int i = 0; i < l.Length; i++)
+            l[i] = line[i + 1] - line[i];
+
+        if (part == 1)
+            return line[^1] + DoIt(l, part);
+        return line[0] - DoIt(l, part);
     }
 }
