@@ -25,8 +25,10 @@ public class Day09 : IAdvent
         for (int i = 0; i < l.Length; i++)
             l[i] = line[i + 1] - line[i];
 
-        if (part == 1)
-            return line[^1] + DoIt(l, part);
-        return line[0] - DoIt(l, part);
+        return part switch
+        {
+            1 => line[^1] + DoIt(l, part),
+            2 => line[0] - DoIt(l, part)
+        };
     }
 }
