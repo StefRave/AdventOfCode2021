@@ -5,8 +5,8 @@ public class Day06 : IAdvent
     public void Run()
     {
         var input = Advent.ReadInput().SplitByNewLine();
-        int[] times = input[0].GetNumbers();
-        int[] distances = input[1].GetNumbers();
+        int[] times = input[0].GetInts();
+        int[] distances = input[1].GetInts();
 
         long answer1 = 1;
         for (int i = 0; i < times.Length; i++)

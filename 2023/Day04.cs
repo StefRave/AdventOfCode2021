@@ -12,8 +12,8 @@ public class Day04 : IAdvent
                 var data = line.Split(':')[1];
                 var groups = data.Split('|');
                 return new Card(
-                    groups[0].GetNumbers().ToHashSet(),
-                    groups[1].GetNumbers());
+                    groups[0].GetInts().ToHashSet(),
+                    groups[1].GetInts());
             })
             .ToArray();
 
