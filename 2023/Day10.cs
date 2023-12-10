@@ -7,6 +7,8 @@ public class Day10 : IAdvent
         var input = Advent.ReadInput().SplitByNewLine()
             .Select(line => line.ToCharArray())
             .ToArray();
+        input = Resize(input);
+
         var start = GetStartingPosition();
         var pos = start;
         char dir = 'N';
@@ -14,7 +16,8 @@ public class Day10 : IAdvent
         do
         {
             char c = input[pos.Y][pos.X];
-            //Console.WriteLine($"{moves} {dir} {c} {pos}");
+            input[pos.Y][pos.X] = '*';
+
             var newDir = (c, dir) switch
             {
                 ('S', 'N') => 'E',
@@ -28,60 +31,20 @@ public class Day10 : IAdvent
                 ('L', 'S') => 'E',
                 (_, _) => dir,
             };
+            if ((pos.X % 2 != 0) && (pos.Y % 2 != 0))
+                moves++;
+            
             var newPos = pos.Move(newDir);
-            {
-                if (pos.Y == 1 && pos.X == 4)
-                    1.ToString();
-                var toOuter = DirToOuter(dir);
-                TryMark(pos + toOuter, 'O');
-                if (c == '|' || c == '-')
-                    TryMark(pos - toOuter, 'I');
-                else
-                {
-                    var toOuter2 = DirToOuter(newDir);
-                    if (newPos + toOuter2 == pos)
-                    {
-                        TryMark(pos - toOuter2, 'I');
-                        TryMark(pos - toOuter2 - toOuter, 'I');
-                    }
-                    else
-                    {
-                        TryMark(pos + toOuter2, 'O');
-                        TryMark(pos + toOuter2 + toOuter, 'O');
-                    }
-                }
-            }
             dir = newDir;
             pos = newPos;
-            moves++;
         }
         while (pos != start);
 
-        foreach (var line in input)
-            Console.WriteLine(new string(line));
 
-        //Advent.AssertAnswer1(moves / 2, expected: 100010, sampleExpected: 8);
+        Advent.AssertAnswer1(moves / 2, expected: 6864, sampleExpected: 78);
 
-
-
-
-        bool marked = true;
-        while (marked)
-        {
-            marked = false;
-            for (int y = 0; y < input.Length; y++)
-                for (int x = 0; x < input[0].Length; x++)
-                    if (input[y][x] == 'I')
-                        foreach (var d in V2.Deltas)
-                            marked |= TryMark(new V2(x, y) + d, 'I');
-        }
-        var chars = input.SelectMany(line => line);
-        int countI = chars.Count(c => c == 'I');
-        int countO = chars.Count(c => c == 'O');
-        int countP = chars.Count(c => c == '.');
-        Console.WriteLine($"I{countI} O{countO} P{countP}");
-        Advent.AssertAnswer2(5432, expected: 200010, sampleExpected: 2010);
-
+        int answer2 = Fill(input, start + new V2(1, 1));
+        Advent.AssertAnswer2(answer2, expected: 349, sampleExpected: 14);
 
         V2 GetStartingPosition()
         {
@@ -90,27 +53,59 @@ public class Day10 : IAdvent
                     if (input[y][x] == 'S')
                         return new V2(x, y);
             throw new Exception("not found");
-        }
+        }        
+    }
 
-        V2 DirToOuter(char dir)
+    private int Fill(char[][] input, V2 start)
+    {
+        var queue = new Stack<V2>();
+        queue.Push(start);
+        int count = 0;
+        while (queue.Count > 0)
         {
-            return dir switch
+            var p = queue.Pop();
+            if (input[p.Y][p.X] == '*')
+                continue;
+            if ((p.X % 2 != 0) && (p.Y % 2 != 0))
+                count++;
+            input[p.Y][p.X] = '*';
+
+            foreach (var d in V2.Deltas)
             {
-                'N' => new V2(-1, 0),
-                'E' => new V2(0, -1),
-                'S' => new V2(1, 0),
-                'W' => new V2(0, 1),
-            };
+                var pos = p + d;
+                if (pos.X >= 0 && pos.Y >= 0 && pos.Y < input.Length && pos.X < input[0].Length)
+                    queue.Push(pos);
+            }
         }
+        return count;
+    }
 
-        bool TryMark(V2 pos, char c)
-        {
-            if (pos.X < 0 || pos.Y < 0 || pos.Y >= input.Length || pos.X >= input[0].Length || input[pos.Y][pos.X] != '.')
-                return false;
-            input[pos.Y][pos.X] = c;
-            return true;
-        }
+    private char[][] Resize(char[][] input)
+    {
+        var ni = Enumerable.Repeat(0, input.Length * 2 + 1)
+            .Select(i => "".PadRight(input[0].Length * 2 + 1, '.').ToArray())
+            .ToArray();
+        for (int y = 0; y < input.Length; y++)
+            for (int x = 0; x < input[0].Length; x++)
+                ni[1 + y * 2][1 + x * 2] = input[y][x];
 
+        for (int y = 2; y < ni.Length - 1; y += 2)
+            for (int x = 1; x < ni[0].Length; x += 2)
+            {
+                char n = ni[y - 1][x];
+                char s = ni[y + 1][x];
+                if ((n == '|' || n == 'F' || n == 'S' || n == '7') && (s == '|' || s == 'L' || s == 'J'))
+                    ni[y][x] = '|';
+            }
+        for (int y = 1; y < ni.Length; y += 2)
+            for (int x = 2; x < ni[0].Length - 1; x += 2)
+            {
+                char w = ni[y][x - 1];
+                char e = ni[y][x + 1];
+                if ((w == '-' || w == 'F' || w == 'S' || w == 'L') && (e == '-' || e == 'J' || e == '7'))
+                    ni[y][x] = '-';
+            }
+        return ni;
     }
 
     public record V2(int X, int Y)
