@@ -11,7 +11,8 @@ public class Day10 : IAdvent
 
         var start = GetStartingPosition();
         var pos = start;
-        char dir = 'N';
+        (input[pos.Y][pos.X],  char dir) = Advent.UseSampleData 
+            ? ('7', 'E') : ('F', 'N');
         int moves = 0;
         do
         {
@@ -20,7 +21,6 @@ public class Day10 : IAdvent
 
             var newDir = (c, dir) switch
             {
-                ('S', 'N') => 'E',
                 ('F', 'N') => 'E',
                 ('F', 'W') => 'S',
                 ('7', 'E') => 'S',
@@ -40,11 +40,11 @@ public class Day10 : IAdvent
         }
         while (pos != start);
 
+        Advent.AssertAnswer1(moves / 2, expected: 6864, sampleExpected: 80);
 
-        Advent.AssertAnswer1(moves / 2, expected: 6864, sampleExpected: 78);
+        int answer2 = Fill(input, start + new V2(Advent.UseSampleData ? -1 : 1, 1));
 
-        int answer2 = Fill(input, start + new V2(1, 1));
-        Advent.AssertAnswer2(answer2, expected: 349, sampleExpected: 14);
+        Advent.AssertAnswer2(answer2, expected: 349, sampleExpected: 10);
 
         V2 GetStartingPosition()
         {
@@ -64,11 +64,11 @@ public class Day10 : IAdvent
         while (queue.Count > 0)
         {
             var p = queue.Pop();
-            if (input[p.Y][p.X] == '*')
+            if (input[p.Y][p.X] == '*' || input[p.Y][p.X] == 'I')
                 continue;
             if ((p.X % 2 != 0) && (p.Y % 2 != 0))
                 count++;
-            input[p.Y][p.X] = '*';
+            input[p.Y][p.X] = 'I';
 
             foreach (var d in V2.Deltas)
             {
@@ -94,7 +94,7 @@ public class Day10 : IAdvent
             {
                 char n = ni[y - 1][x];
                 char s = ni[y + 1][x];
-                if ((n == '|' || n == 'F' || n == 'S' || n == '7') && (s == '|' || s == 'L' || s == 'J'))
+                if ((n == '|' || n == 'F' || n == '7') && (s == '|' || s == 'L' || s == 'J'))
                     ni[y][x] = '|';
             }
         for (int y = 1; y < ni.Length; y += 2)
@@ -102,7 +102,7 @@ public class Day10 : IAdvent
             {
                 char w = ni[y][x - 1];
                 char e = ni[y][x + 1];
-                if ((w == '-' || w == 'F' || w == 'S' || w == 'L') && (e == '-' || e == 'J' || e == '7'))
+                if ((w == '-' || w == 'F' || w == 'L') && (e == '-' || e == 'J' || e == '7'))
                     ni[y][x] = '-';
             }
         return ni;
