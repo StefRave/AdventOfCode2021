@@ -8,13 +8,13 @@ public class Day11 : IAdvent
             .Select(line => line.ToCharArray())
             .ToArray();
 
-        var markEmptyY = input.Select((_, y) => input[y].All(c => c == '.')).ToArray();
+        var markEmptyY = input.Select(line => line.All(c => c == '.')).ToArray();
         var markEmptyX = input[0].Select((_, x) => input.All(line => line[x] == '.')).ToArray();
 
         var coords = new List<(int X, int Y)>();
         for (int y = 0; y < input.Length; y++)
-            for (int x = 0; x < input[0].Length; x++)
-                if (input[y][x] != '.')
+            for (int x = 0; x < input[y].Length; x++)
+                if (input[y][x] == '#')
                     coords.Add((x, y));
 
         long answer1 = CalculateTotalDistance(2);
