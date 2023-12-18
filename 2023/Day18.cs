@@ -11,48 +11,40 @@ public class Day18 : IAdvent
             .ToArray();
 
         var answer1 = CalculateAreaPicks(
-            GetVectors(input.Select(l => (Enum.Parse<Movement>(l.m), l.len))));
+            GetVectors(input.Select(l => (Enum.Parse<Movement>(l.m), l.len))).ToArray());
         Advent.AssertAnswer1(answer1, expected: 28911, sampleExpected: 62);
 
         var toVector = (string s) => ((Movement)(s[^1] - '0'), long.Parse(s[..^1], System.Globalization.NumberStyles.HexNumber));
         var answer2 = CalculateAreaPicks(
-            GetVectors(input.Select(l => toVector(l.color))));
+            GetVectors(input.Select(l => toVector(l.color))).ToArray());
         Advent.AssertAnswer2(answer2, expected: 77366737561114, sampleExpected: 952408144115);
     }
 
     private static long CalculateAreaPicks((long x, long y)[] vectors)
     {
         double area = 0.0;
-        int j = vectors.Length - 1;
         long circumference = 0;
         var prev = vectors[^1];
-        for (int i = 0; i < vectors.Length; i++)
+        foreach (var vector in vectors)
         {
-            area += (vectors[j].x + vectors[i].x) * (vectors[j].y - vectors[i].y);
-            j = i;
-            circumference += Math.Abs(prev.x - vectors[i].x + prev.y - vectors[i].y);
-            prev = vectors[i];
+            area += (prev.x + vector.x) * (prev.y - vector.y);
+            circumference += Math.Abs(prev.x - vector.x + prev.y - vector.y);
+            prev = vector;
         }
         return (long)Math.Abs(area / 2.0) + (circumference / 2 + 1);
     }
 
-    private static (long x, long y)[] GetVectors(IEnumerable<(Movement, long len)> input)
+    private static IEnumerable<(long x, long y)> GetVectors(IEnumerable<(Movement, long len)> input)
     {
-        var vectors = new List<(long x, long y)>();
         var p = (x: 0L, y: 0L);
         foreach (var (m, len) in input)
-        {
-            var (x, y) = m switch
+            yield return p = m switch
             {
-                Movement.R => (len, 0L),
-                Movement.L => (-len, 0),
-                Movement.U => (0, -len),
-                Movement.D => (0, len),
+                Movement.R => (p.x + len, p.y),
+                Movement.L => (p.x - len, p.y),
+                Movement.U => (p.x, p.y - len),
+                Movement.D => (p.x, p.y + len),
                 _ => throw new NotImplementedException(),
             };
-            p = (x: p.x + x, y: p.y + y);
-            vectors.Add(p);
-        }
-        return vectors.ToArray();
     }
 }
