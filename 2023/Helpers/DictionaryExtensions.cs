@@ -1,6 +1,6 @@
 ﻿namespace AdventOfCode2023.Helpers;
 
-public static class DictionaryExpensions
+public static class DictionaryExtensions
 {
     public static void Update<TKey, TValue>(this IDictionary<TKey, TValue> dict, TKey key, Func<TValue, TValue> update)
     {
