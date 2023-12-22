@@ -1,7 +1,3 @@
-
-using System;
-using System.Linq;
-
 namespace AdventOfCode2023;
 
 public class Day21 : IAdvent
@@ -12,85 +8,71 @@ public class Day21 : IAdvent
     {
         var input = Advent.ReadInput().SplitByNewLine();
         var (maxX, maxY) = (input[0].Length, input.Length);
-        var map = new HashSet<(int x, int y)>();
-        var start = (0, 0);
+        
+        var (sx, sy) = (0, 0);
         for (int y = 0; y < input.Length; y++)
             for (int x = 0; x < input[y].Length; x++)
-            {
                 if (input[y][x] == 'S')
-                    start = (x, y);
-                else if (input[y ][x] != '.')
-                    map.Add((x, y));
-            }
+                    (sx, sy) = (x, y);
+
+        int maxIterations = 2500;
         int totalTimes = Advent.UseSampleData ? 5000 : 26501365;
-        long[] total = [1,0];
-        long[] totals = new long[5000];
-        long[] diff = new long[5000];
-        long[] diff2 = new long[5000];
-        var toGo = new Queue<(int x, int y)>([start]);
-        
-        var dict = new Dictionary<(int x, int y), char>();
-        dict[start] = 'S';
-        long answer2 = 0;
-        for (int times = 1; times <= totalTimes; times++)
+        long[] totals = new long[totalTimes + 1];
+        long[] diff = new long[totalTimes + 1];
+        long[] diff2 = new long[totalTimes + 1];
+        var visited = new bool[maxIterations * 4, maxIterations * 4];
+        var (cx, cy) = (maxIterations * 2, maxIterations * 2);
+        visited[cx + sx, cy + sy] = true;
+        var toGo = new Queue<(int x, int y)>([(sx, sy)]);
+        var periodDetection = new Dictionary<long, (long period, long lastOccurance, int count)>();
+        long period = 0;
+        long times;
+        totals[0] = 1;
+        for (times = 1; times < maxIterations; times++)
         {
             var toGoNew = new Queue<(int x, int y)>();
             while (toGo.TryDequeue(out var pos))
             {
                 foreach (var (dx, dy) in deltas)
                 {
-                    var p = (x: pos.x + dx, y: pos.y + dy);
-                    var pMod = ((p.x % maxX + maxX) % maxX, (p.y % maxY + maxX) % maxY);
-                    if (!dict.ContainsKey(p))
+                    var (px, py) = (pos.x + dx, pos.y + dy);
+                    var (mx, my) = ((px % maxX + maxX) % maxX, (py % maxY + maxX) % maxY);
+                    if (!visited[cx + px, cy + py])
                     {
-
-                        bool obstructed = map.Contains(pMod);
-                        dict.Add(p, obstructed ? '#' : 'o');
-                        if (!obstructed)
-                            toGoNew.Enqueue(p);
+                        visited[cx + px, cy + py] = true;
+                        if (input[my][mx] != '#')
+                            toGoNew.Enqueue((px, py));
                     }
                 }
             }
-            totals[times] = total[times % 2] += toGoNew.Count;
-            toGo = toGoNew;
-
-            if (times == (Advent.UseSampleData ? 6 : 64))
+            totals[times] = toGoNew.Count;
+            if (times >= 2)
             {
-                Console.WriteLine("\r");
-                Advent.AssertAnswer1(totals[times], expected: 3600, sampleExpected: 16);
-            }
-            if (times > 2)
-            {
+                totals[times] += totals[times - 2];
                 diff[times] = totals[times] - totals[times - 2];
                 diff2[times] = diff[times] - diff[times - 2];
-                Console.Write($"\r{times} {diff2[times]}  {diff[times]}  {total[times % 2]}");
-                if (times == 3000)
-                {
-                    Console.WriteLine("");
-                    var ankor = diff2[2000..times]
-                        .Select((n, i) => (n, i))
-                        .GroupBy(n => n.n)
-                        .OrderByDescending(g => g.Count())
-                        .First()
-                        .Select(gv => gv.i)
-                        .ToArray();
-                    var ankorDiff = ankor.Skip(1).Select((n, i) => ankor[i + 1] - ankor[i]).ToArray();
-                    int period = ankorDiff[0] * 2;
-                    int startAt = totalTimes - ((totalTimes - 2000) / period * period);
-
-                    long t2 = totals[startAt];
-                    for (int i = startAt + 2; i <= totalTimes; i += 2)
-                    {
-                        int index = (i - startAt - 2) % period + startAt + 2 - period;
-                        var temp = diff[index];
-                        diff[index] += (diff[index] - diff[index - period]);
-                        diff[index - period] = temp;
-                        t2 += diff[index];
-                    }
-                    answer2 = t2;
-                    break;
-                }
             }
+            if (times > 500)
+            {
+                periodDetection.Update(diff2[times], a => (period: times - a.lastOccurance, lastOccurance: times, count: (times - a.lastOccurance == a.period) ? ++a.count : 1));
+                period = periodDetection.Values.FirstOrDefault(a => a.count >= 3).period;
+                if (period != 0)
+                    break;
+            }
+            toGo = toGoNew;
+        }
+        Advent.AssertAnswer1(totals[Advent.UseSampleData ? 6 : 64], expected: 3600, sampleExpected: 16);
+
+        if (period % 2 == 1)
+            period *= 2;
+        if ((times + totalTimes) % 2 == 1)
+            times--;
+        times -= period;
+        long answer2 = totals[times - 2];
+        for (; times <= totalTimes; times += 2)
+        {
+            diff[times] = (diff[times - period] * 2 - diff[times - period * 2]);
+            answer2 += diff[times];
         }
         Advent.AssertAnswer2(answer2, expected: 599763113936220, sampleExpected: 16733044);
     }
