@@ -53,11 +53,8 @@ public class Day23 : IAdvent
                 map[pos.y][pos.x] = 'x';
                 AddVectors(startPos, pos, dir, length);
                 foreach (var p in options)
-                {
-                    bool isNew = !vectors.ContainsKey(p);
-                    if (isNew)
+                    if (!vectors.ContainsKey(p))
                         queue.Push((p, pos, Direction.Both, 1));
-                }
             }
             else if (options.Length == 1)
             {
