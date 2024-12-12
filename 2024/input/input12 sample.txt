@@ -1,1 +1,6 @@
-input12 sample.txt
+AAAAAA
+AAABBA
+AAABBA
+ABBAAA
+ABBAAA
+AAAAAA
