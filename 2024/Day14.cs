@@ -78,6 +78,8 @@ public record V2(int x, int y)
 {
     public static V2 operator -(V2 a, V2 b) => new V2(a.x - b.x, a.y - b.y);
     public static V2 operator +(V2 a, V2 b) => new V2(a.x + b.x, a.y + b.y);
+
+    public static implicit operator V2((int x, int y) t) => new V2(t.x, t.y);
 }
 
 
