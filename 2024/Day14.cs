@@ -76,6 +76,7 @@ public class Day14 : IAdvent
 
 public record V2(int x, int y)
 {
+    public readonly static V2 V0 = (0, 0);
     public static V2 operator -(V2 a, V2 b) => new V2(a.x - b.x, a.y - b.y);
     public static V2 operator +(V2 a, V2 b) => new V2(a.x + b.x, a.y + b.y);
 
