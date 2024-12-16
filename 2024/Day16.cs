@@ -3,7 +3,13 @@ namespace AdventOfCode2024;
 
 public class Day16 : IAdvent
 {
+    enum Dir { S, E, N, W }
     readonly V2[] directions = [(0, 1), (1, 0), (0, -1), (-1, 0)];
+
+    Dir Left(Dir d) => (Dir)(((int)d + 1) % 4);
+    Dir Right(Dir d) => (Dir)(((int)d + 3) % 4);
+    V2 Move(Dir d) => directions[(int)d];
+
     public void Run()
     {
         var input = Advent.ReadInput().SplitByNewLine();
@@ -18,56 +24,53 @@ public class Day16 : IAdvent
         (int answer1, int answer2) ShortestRoute()
         {
 
-            var scores = new Dictionary<(V2 p, V2 d), int>();
-            var prevPos = new Dictionary<(V2 p, V2 d), (V2 p, int score)>();
-            int recordScore;
+            var scores = new Dictionary<(V2 p, Dir d), int>();
+            var queue = new PriorityQueue<(V2 p, Dir, int score, int steps), int>();
 
-            var queue = new PriorityQueue<(V2 p, V2 d, int score, int steps), int>();
+            queue.Enqueue((start, Dir.E, 0, 0), 0);
 
-            foreach (var d in PossibleDirections(start))
-                queue.Enqueue((start + d, d, 1001, 1), 1);
             while (queue.Count > 0)
             {
                 var (p, d, score, step) = queue.Dequeue();
-                if (scores.TryGetValue((p, d), out recordScore))
+                if (scores.TryGetValue((p, d), out int recordScore))
                     if (recordScore < score)
                         continue;
-                foreach (var dp in PossibleDirections(p))
+                scores[(p, d)] = score;
+
+                TryQueue(p + Move(d), d, score + 1, step + 1);
+                TryQueue(p, Left(d), score + 1000, step);
+                TryQueue(p, Right(d), score + 1000, step);
+
+                void TryQueue(V2 p, Dir d, int score, int step)
                 {
-                    if (dp == (V2.V0 - d))
-                        continue;
-                    int tScore = score + ((dp == d) ? 1 : 1001);
-                    var pn = p + dp;
-                    if (scores.TryGetValue((pn, dp), out recordScore) && recordScore <= tScore)
-                        continue;
-                    queue.Enqueue((pn, dp, tScore, step + 1), step);
-                    scores[(pn, dp)] = tScore;
-                    prevPos[(pn, dp)] = (p, score);
+                    if (input[p.y][p.x] == '#')
+                        return;
+                    if (scores.TryGetValue((p, d), out recordScore) && recordScore <= score)
+                        return;
+                    queue.Enqueue((p, d, score, step), step);
                 }
             }
-            recordScore = int.MaxValue;
-            V2 recordDir = V2.V0;
-            foreach (var dp in directions)
+            
+            (int endScore, Dir recordDir) = GetEndScore(scores);
+            int positions = CountPositionsOnAllRoutes(scores, endScore, recordDir);
+            
+            return (endScore, positions);
+        }
+        
+        (int endScore, Dir recordDir) GetEndScore(Dictionary<(V2 p, Dir d), int> scores)
+        {
+            var endScore = int.MaxValue;
+            Dir recordDir = 0;
+            foreach (var dp in Enum.GetValues<Dir>())
             {
-                if (scores.TryGetValue((end, dp), out int endScore) && endScore < recordScore)
+                if (scores.TryGetValue((end, dp), out int recordScore) && recordScore < endScore)
                 {
-                    recordScore = endScore;
+                    endScore = recordScore;
                     recordDir = dp;
                 }
             }
-            int result = CountPositionsOnAllRoutes(scores, recordScore);
-            return (recordScore, result);
+            return (endScore, recordDir);
         }
-
-        IEnumerable<V2> PossibleDirections(V2 p)
-        {
-            foreach (var d in directions)
-            {
-                if (Get(p + d) != '#')
-                    yield return d;
-            }
-        }
-        char Get(V2 p) => input[p.y][p.x];
 
         V2 Find(char v)
         {
@@ -78,34 +81,28 @@ public class Day16 : IAdvent
             throw new Exception();
         }
 
-        int CountPositionsOnAllRoutes(Dictionary<(V2 p, V2 d), int> scores, int recordScore)
+        int CountPositionsOnAllRoutes(Dictionary<(V2 p, Dir d), int> scores, int recordScore, Dir lastDir)
         {
-            var queue = new Queue<(V2 p, V2 d, int score)>();
-            var visited = new HashSet<(V2, V2)>();
+            var queue = new Queue<(V2 p, Dir d, int score)>();
+            var visited = new HashSet<(V2, Dir)>();
 
-            foreach (var d in PossibleDirections(end))
-                queue.Enqueue((end, d, recordScore));
+            queue.Enqueue((end, lastDir, recordScore));
             while (queue.Any())
             {
                 var (p, d, score) = queue.Dequeue();
                 visited.Add((p, d));
 
-                foreach (var dp in PossibleDirections(p))
+                TryQueue(p - Move(d), d, score - 1);
+                TryQueue(p, Left(d), score - 1000);
+                TryQueue(p, Right(d), score - 1000);
+
+                void TryQueue(V2 p, Dir d, int score)
                 {
-                    var np = p + dp;
-                    foreach (var ds in directions)
-                    {
-                        if (scores.TryGetValue((np, ds), out var pScore))
-                        {
-                            var tScore = pScore + ((dp == V2.V0 - ds) ? 1 : 1001);
-                            if (score == tScore)
-                                queue.Enqueue((np, V2.V0 - ds, pScore));
-                        }
-                    }
+                    if (scores.TryGetValue((p, d), out recordScore) && recordScore == score)
+                        queue.Enqueue((p, d, score));
                 }
             }
-
-            return visited.Select(v => v.Item1).Distinct().Count() + 2; // + start and end
+            return visited.Select(v => v.Item1).Distinct().Count();
         }
     }
 }
