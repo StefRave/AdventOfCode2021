@@ -34,41 +34,7 @@ public class Day15 : IAdvent
 
             foreach (var instruction in instructions)
             {
-                var dict = new Dictionary<V2, char>();
-                dict.Add(p, '.');
-                var queue = new Queue<(V2, char)>();
-                queue.Enqueue((p.Move(instruction), '@'));
-
-                V2 pn = p.Move(instruction);
-                if (CanMove())
-                {
-                    foreach (var (ps, c) in dict)
-                        Set(ps, c);
-                    p = pn;
-                }
-
-                bool CanMove()
-                {
-                    while (queue.Any())
-                    {
-                        var (p, pc) = queue.Dequeue();
-                        if (dict.ContainsKey(p))
-                            continue;
-
-                        char c = Get(p);
-                        if (c == '#')
-                            return false;
-                        dict.Add(p, pc);
-                        if (c == '.')
-                            continue;
-                        if ((c == ']' && instruction == '^') || (c == '[' && instruction == 'v'))
-                            queue.Enqueue((p.MoveLeft(instruction), '.'));
-                        else if ((c == '[' && instruction == '^') || (c == ']' && instruction == 'v'))
-                            queue.Enqueue((p.MoveRight(instruction), '.'));
-                        queue.Enqueue((p.Move(instruction), c));
-                    }
-                    return true;
-                }
+                p = ExecuteInstruction(map, p, instruction);
             }
             int answer = 0;
             for (int y = 0; y < map.Length; y++)
@@ -80,9 +46,50 @@ public class Day15 : IAdvent
                         answer += 100 * y + x;
                 }
             return answer;
+        }
+    }
 
-            char Get(V2 p) => map[p.y][p.x];
-            char Set(V2 p, char c) => map[p.y][p.x] = c;
+    static V2 ExecuteInstruction(char[][] map, V2 p, char instruction)
+    {
+        var newValues = new Dictionary<V2, char>();
+        newValues.Add(p, '.');
+        var positionsToCheck = new Queue<(V2, char)>();
+        positionsToCheck.Enqueue((p.Move(instruction), '@'));
+
+        V2 pn = p.Move(instruction);
+        if (CanMove())
+        {
+            foreach (var (ps, c) in newValues)
+                map[ps.y][ps.x] = c;
+            p = pn;
+        }
+        return p;
+
+
+        bool CanMove()
+        {
+            while (positionsToCheck.Any())
+            {
+                var (p, pc) = positionsToCheck.Dequeue();
+                if (newValues.ContainsKey(p))
+                    continue;
+
+                char c = map[p.y][p.x];
+                if (c == '#')
+                    return false;
+                newValues.Add(p, pc);
+                if (c == '.')
+                    continue;
+                if (instruction == '^' || instruction == 'v')
+                {
+                    if (c == ']')
+                        positionsToCheck.Enqueue((p + (-1, 0), '.'));
+                    else if (c == '[')
+                        positionsToCheck.Enqueue((p + (1, 0), '.'));
+                }
+                positionsToCheck.Enqueue((p.Move(instruction), c));
+            }
+            return true;
         }
     }
 }
@@ -97,28 +104,6 @@ public static class V2Extensions
             '>' => (1, 0),
             'v' => (0, 1),
             '<' => (-1, 0),
-            _ => throw new ArgumentOutOfRangeException(nameof(move))
-        };
-    }
-    public static V2 MoveLeft(this V2 p, char move)
-    {
-        return p + move switch
-        {
-            '^' => (-1, 0),
-            '>' => (0, -1),
-            'v' => (1, 0),
-            '<' => (0, 1),
-            _ => throw new ArgumentOutOfRangeException(nameof(move))
-        };
-    }
-    public static V2 MoveRight(this V2 p, char move)
-    {
-        return p + move switch
-        {
-            '^' => (1, 0),
-            '>' => (0, 1),
-            'v' => (-1, 0),
-            '<' => (0, -1),
             _ => throw new ArgumentOutOfRangeException(nameof(move))
         };
     }
