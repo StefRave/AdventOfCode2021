@@ -52,7 +52,7 @@ public class Day22 : IAdvent
 
     static long GenerateNextSecretNumber(long secretNumber)
     {
-        secretNumber ^= (secretNumber *= 64);
+        secretNumber ^= secretNumber * 64;
         secretNumber %= 16777216;
         secretNumber ^= secretNumber / 32;
         secretNumber %= 16777216;

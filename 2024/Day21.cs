@@ -82,24 +82,6 @@ public class Day21 : IAdvent
             }
             return solution2s.ToArray();
         }
-
-        Movements SimpleCalc(string solution, Movements result = null, long mulFactor = 1)
-        {
-            result ??= new Movements();
-            string segment = "";
-            char current = 'A';
-            foreach (var e in solution)
-            {
-                segment += keypad2Lengths[(current, e)].First() + 'A';
-                current = e;
-                if (e == 'A')
-                {
-                    result.Add(segment, mulFactor);
-                    segment = "";
-                }
-            }
-            return result;
-        }
     }
 
     private static Dictionary<(char, char), string[]> GetKeyMovements(string[] keypad)
